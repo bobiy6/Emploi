@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import prisma from '../../config/prisma.js';
+import { generateToken } from '../../middleware/auth.js';
 
 export const getAllUsers = async (req: any, res: Response) => {
   try {
@@ -31,7 +32,8 @@ export const impersonateUser = async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: parseInt(id as string) } });
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json({ message: 'Impersonation successful', user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+    const token = generateToken(user.id, user.role);
+    res.json({ message: 'Impersonation successful', token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
   } catch (error) {
     res.status(500).json({ message: 'Error during impersonation', error });
   }

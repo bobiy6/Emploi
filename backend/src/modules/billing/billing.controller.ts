@@ -50,3 +50,15 @@ export const payInvoice = async (req: any, res: Response) => {
     res.status(500).json({ message: 'Error paying invoice', error });
   }
 };
+
+export const getAllInvoices = async (req: any, res: Response) => {
+  try {
+    const invoices = await prisma.invoice.findMany({
+      include: { user: { select: { name: true, email: true } }, order: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(invoices);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching all invoices', error });
+  }
+};

@@ -41,3 +41,15 @@ export const powerAction = async (req: any, res: Response) => {
     res.status(500).json({ message: 'Error performing power action', error });
   }
 };
+
+export const getAllServices = async (req: any, res: Response) => {
+  try {
+    const services = await prisma.service.findMany({
+      include: { user: { select: { name: true, email: true } }, product: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(services);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching all services', error });
+  }
+};
