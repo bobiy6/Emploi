@@ -73,7 +73,17 @@ const CategoryManagement = () => {
                   </div>
                   <div className="flex gap-2">
                      <button className="text-gray-400 hover:text-blue-600"><Edit className="w-4 h-4" /></button>
-                     <button className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                     <button
+                        onClick={async () => {
+                           if(confirm('Delete category?')) {
+                              await api.delete(`/categories/${cat.id}`);
+                              setCategories(categories.filter(c => c.id !== cat.id));
+                           }
+                        }}
+                        className="text-gray-400 hover:text-red-600"
+                     >
+                        <Trash2 className="w-4 h-4" />
+                     </button>
                   </div>
                </div>
                <h3 className="text-xl font-bold mb-1">{cat.name}</h3>

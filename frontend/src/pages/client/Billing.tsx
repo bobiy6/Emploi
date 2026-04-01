@@ -36,6 +36,20 @@ const Billing = () => {
     }
   };
 
+  const handleDownload = async (invoiceId: number) => {
+    try {
+      const response = await api.get(`/billing/${invoiceId}/download`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice-${invoiceId}.txt`);
+      document.body.appendChild(link);
+      link.click();
+    } catch (err) {
+      alert('Download failed');
+    }
+  };
+
   return (
     <div className="space-y-10">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -119,7 +133,10 @@ const Billing = () => {
                                    Pay Now
                                 </Button>
                              ) : (
-                                <button className="text-blue-600 font-bold text-xs flex items-center gap-1 hover:underline">
+                                <button
+                                   onClick={() => handleDownload(inv.id)}
+                                   className="text-blue-600 font-bold text-xs flex items-center gap-1 hover:underline"
+                                >
                                    <Download className="w-3 h-3" /> PDF
                                 </button>
                              )}

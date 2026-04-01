@@ -8,6 +8,7 @@ import Store from './pages/client/Store';
 import Services from './pages/client/Services';
 import Billing from './pages/client/Billing';
 import Support from './pages/client/Support';
+import Settings from './pages/client/Settings';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
@@ -16,6 +17,8 @@ import CategoryManagement from './pages/admin/CategoryManagement';
 import OrderManagement from './pages/admin/OrderManagement';
 import AdminServiceManagement from './pages/admin/ServiceManagement';
 import AdminTicketManagement from './pages/admin/TicketManagement';
+import ModuleSettings from './pages/admin/ModuleSettings';
+import { AdminGuard } from './components/AdminGuard';
 
 const App = () => {
   return (
@@ -31,15 +34,17 @@ const App = () => {
           <Route path="/store" element={<ClientLayout><Store /></ClientLayout>} />
           <Route path="/billing" element={<ClientLayout><Billing /></ClientLayout>} />
           <Route path="/support" element={<ClientLayout><Support /></ClientLayout>} />
+        <Route path="/settings" element={<ClientLayout><Settings /></ClientLayout>} />
 
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-          <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
-          <Route path="/admin/products" element={<AdminLayout><ProductCatalog /></AdminLayout>} />
-          <Route path="/admin/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
-          <Route path="/admin/orders" element={<AdminLayout><OrderManagement /></AdminLayout>} />
-          <Route path="/admin/services" element={<AdminLayout><AdminServiceManagement /></AdminLayout>} />
-          <Route path="/admin/tickets" element={<AdminLayout><AdminTicketManagement /></AdminLayout>} />
+          <Route path="/admin" element={<AdminGuard><AdminLayout><AdminDashboard /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/users" element={<AdminGuard><AdminLayout><UserManagement /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/products" element={<AdminGuard><AdminLayout><ProductCatalog /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/categories" element={<AdminGuard><AdminLayout><CategoryManagement /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/orders" element={<AdminGuard><AdminLayout><OrderManagement /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/services" element={<AdminGuard><AdminLayout><AdminServiceManagement /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/tickets" element={<AdminGuard><AdminLayout><AdminTicketManagement /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/settings" element={<AdminGuard><AdminLayout><ModuleSettings /></AdminLayout></AdminGuard>} />
 
           {/* Redirects */}
           <Route path="/" element={<Navigate to="/dashboard" />} />

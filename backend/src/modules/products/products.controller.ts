@@ -35,3 +35,27 @@ export const getProductById = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error fetching product', error });
   }
 };
+
+export const updateProduct = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, description, price, type, config, categoryId } = req.body;
+  try {
+    const product = await prisma.product.update({
+      where: { id: parseInt(id as string) },
+      data: { name, description, price, type, config, categoryId: parseInt(categoryId as string) }
+    });
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating product', error });
+  }
+};
+
+export const deleteProduct = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await prisma.product.delete({ where: { id: parseInt(id as string) } });
+    res.json({ message: 'Product deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting product', error });
+  }
+};

@@ -40,15 +40,19 @@ enum TicketStatus {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  name        String
-  role        Role     @default(USER)
-  permissions Json?    // Array of string permissions for sub-admins
-  balance     Float    @default(0.0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  name          String
+  role          Role     @default(USER)
+  isCompany     Boolean  @default(false)
+  companyName   String?
+  vatNumber     String?
+  address       String?
+  permissions   Json?    // Array of string permissions for sub-admins
+  balance       Float    @default(0.0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   orders   Order[]
   services Service[]
@@ -137,4 +141,10 @@ model TicketMessage {
   message   String
   isAdmin   Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model SystemSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value Json
 }

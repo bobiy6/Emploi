@@ -37,11 +37,13 @@ const UserManagement = () => {
     }
   };
 
-  const handleAddBalance = async (userId: number) => {
-    const amount = prompt('Enter amount to add:');
-    if (!amount) return;
+  const handleBalanceUpdate = async (userId: number, type: 'add' | 'remove') => {
+    const amountStr = prompt(`Enter amount to ${type}:`);
+    if (!amountStr) return;
+    const amount = parseFloat(amountStr);
+    const finalAmount = type === 'add' ? amount : -amount;
     try {
-      await api.post(`/users/${userId}/balance`, { amount: parseFloat(amount) });
+      await api.post(`/users/${userId}/balance`, { amount: finalAmount });
       alert('Balance updated');
       const res = await api.get('/users');
       setUsers(res.data);
@@ -155,11 +157,18 @@ const UserManagement = () => {
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-2">
                                 <button
-                                   onClick={() => handleAddBalance(user.id)}
+                                   onClick={() => handleBalanceUpdate(user.id, 'add')}
                                    className="p-2 bg-gray-100 rounded-lg text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                                   title="Add Balance"
+                                   title="Add Funds"
                                 >
-                                   <DollarSign className="w-4 h-4" />
+                                   <Plus className="w-4 h-4" />
+                                </button>
+                                <button
+                                   onClick={() => handleBalanceUpdate(user.id, 'remove')}
+                                   className="p-2 bg-gray-100 rounded-lg text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                   title="Remove Funds"
+                                >
+                                   <Trash2 className="w-4 h-4" />
                                 </button>
                                 <button
                                    onClick={() => handleImpersonate(user.id)}
@@ -169,10 +178,16 @@ const UserManagement = () => {
                                    <UserCheck className="w-4 h-4" />
                                 </button>
                                 <button
-                                   className="p-2 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-800 hover:text-white transition-all shadow-sm"
-                                   title="Edit User"
+                                   onClick={async () => {
+                                      if(confirm('Delete user?')) {
+                                         await api.delete(`/users/${user.id}`);
+                                         setUsers(users.filter(u => u.id !== user.id));
+                                      }
+                                   }}
+                                   className="p-2 bg-gray-100 rounded-lg text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                   title="Delete User"
                                 >
-                                   <Edit className="w-4 h-4" />
+                                   <Trash2 className="w-4 h-4" />
                                 </button>
                              </div>
                           </td>

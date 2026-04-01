@@ -33,6 +33,7 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
     { icon: ShoppingCart, label: 'Store', to: '/store' },
     { icon: CreditCard, label: 'Billing', to: '/billing' },
     { icon: LifeBuoy, label: 'Support', to: '/support' },
+    { icon: Settings, label: 'Settings', to: '/settings' },
   ];
 
   return (

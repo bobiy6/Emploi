@@ -36,6 +36,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     { icon: ClipboardList, label: 'Order List', to: '/admin/orders' },
     { icon: ShieldAlert, label: 'Active Services', to: '/admin/services' },
     { icon: LifeBuoy, label: 'Support Tickets', to: '/admin/tickets' },
+    { icon: Settings, label: 'Module Settings', to: '/admin/settings' },
   ];
 
   return (

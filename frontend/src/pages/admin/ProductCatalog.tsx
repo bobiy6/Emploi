@@ -138,7 +138,17 @@ const ProductCatalog = () => {
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-2">
                                 <button className="p-2 bg-gray-100 rounded-lg text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Edit className="w-4 h-4" /></button>
-                                <button className="p-2 bg-gray-100 rounded-lg text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"><Trash2 className="w-4 h-4" /></button>
+                                <button
+                                   onClick={async () => {
+                                      if(confirm('Delete product?')) {
+                                         await api.delete(`/products/${prod.id}`);
+                                         setProducts(products.filter(p => p.id !== prod.id));
+                                      }
+                                   }}
+                                   className="p-2 bg-gray-100 rounded-lg text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                >
+                                   <Trash2 className="w-4 h-4" />
+                                </button>
                              </div>
                           </td>
                        </tr>

@@ -34,9 +34,39 @@ export const createAdminUser = async (req: any, res: Response) => {
   }
 };
 
+export const updateUser = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const { name, email, role, permissions, isCompany, companyName, vatNumber, address, password } = req.body;
+  const updateData: any = { name, email, role, permissions, isCompany, companyName, vatNumber, address };
+
+  try {
+    if (password) {
+      const bcrypt = (await import('bcryptjs')).default;
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+    const user = await prisma.user.update({
+      where: { id: parseInt(id as string) },
+      data: updateData
+    });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user', error });
+  }
+};
+
+export const deleteUser = async (req: any, res: Response) => {
+  const { id } = req.params;
+  try {
+    await prisma.user.delete({ where: { id: parseInt(id as string) } });
+    res.json({ message: 'User deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting user', error });
+  }
+};
+
 export const updateUserBalance = async (req: any, res: Response) => {
   const { id } = req.params;
-  const { amount } = req.body;
+  const { amount } = req.body; // positive to add, negative to subtract
   try {
     const user = await prisma.user.update({
       where: { id: parseInt(id as string) },
