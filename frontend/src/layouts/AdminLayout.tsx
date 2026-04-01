@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, FolderTree, ClipboardList, ShieldAlert, LifeBuoy, LogOut, Settings, Admin } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, FolderTree, ClipboardList, ShieldAlert, LifeBuoy, LogOut, Settings } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { Badge } from '../components/ui/Badge';
 
 const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
   <Link
