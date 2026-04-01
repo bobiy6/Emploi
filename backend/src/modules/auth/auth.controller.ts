@@ -4,13 +4,13 @@ import prisma from '../../config/prisma.js';
 import { generateToken } from '../../middleware/auth.js';
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, name } = req.body;
+  const { email, password, name, isCompany, companyName, vatNumber } = req.body;
   try {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name },
+      data: { email, password: hashedPassword, name, isCompany, companyName, vatNumber },
     });
     const token = generateToken(user.id, user.role);
     res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });

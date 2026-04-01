@@ -11,6 +11,7 @@ const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [adminForm, setAdminForm] = useState({ name: '', email: '', password: '', role: 'SUPPORT' });
   const navigate = useNavigate();
 
@@ -52,20 +53,41 @@ const UserManagement = () => {
     }
   };
 
-  const handleCreateAdmin = async (e: React.FormEvent) => {
+  const handleSaveAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/users/admin', adminForm);
-      alert('Admin account created');
+      if (editingUser) {
+        await api.put(`/users/${editingUser.id}`, adminForm);
+        alert('User updated');
+      } else {
+        await api.post('/users/admin', adminForm);
+        alert('Admin account created');
+      }
       setShowAdminModal(false);
+      setEditingUser(null);
+      setAdminForm({ name: '', email: '', password: '', role: 'SUPPORT' });
       const res = await api.get('/users');
       setUsers(res.data);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Creation failed');
+      alert(err.response?.data?.message || 'Operation failed');
     }
   };
 
-  const filteredUsers = users.filter(u => u.email.toLowerCase().includes(search.toLowerCase()) || u.name.toLowerCase().includes(search.toLowerCase()));
+  const handleEdit = (user: any) => {
+    setEditingUser(user);
+    setAdminForm({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: user.role
+    });
+    setShowAdminModal(true);
+  };
+
+  const filteredUsers = users?.filter(u =>
+    u.email?.toLowerCase().includes(search.toLowerCase()) ||
+    u.name?.toLowerCase().includes(search.toLowerCase())
+  ) || [];
 
   return (
     <div className="space-y-8">
@@ -88,11 +110,11 @@ const UserManagement = () => {
       {showAdminModal && (
          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <Card className="w-full max-w-md">
-               <h3 className="text-2xl font-bold mb-6">Create Staff Account</h3>
-               <form onSubmit={handleCreateAdmin} className="space-y-4">
+               <h3 className="text-2xl font-bold mb-6">{editingUser ? 'Edit User' : 'Create Staff Account'}</h3>
+               <form onSubmit={handleSaveAdmin} className="space-y-4">
                   <Input label="Name" value={adminForm.name} onChange={e => setAdminForm({...adminForm, name: e.target.value})} required />
                   <Input label="Email" type="email" value={adminForm.email} onChange={e => setAdminForm({...adminForm, email: e.target.value})} required />
-                  <Input label="Password" type="password" value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} required />
+                  <Input label="Password" type="password" placeholder={editingUser ? 'Leave blank to keep same' : 'Enter password'} value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} required={!editingUser} />
                   <div className="space-y-1">
                      <label className="text-sm font-medium ml-1">Staff Role</label>
                      <select
@@ -105,8 +127,8 @@ const UserManagement = () => {
                      </select>
                   </div>
                   <div className="flex gap-3 pt-4">
-                     <Button variant="ghost" className="flex-1" onClick={() => setShowAdminModal(false)}>Cancel</Button>
-                     <Button type="submit" className="flex-1">Create Account</Button>
+                     <Button variant="ghost" className="flex-1" onClick={() => { setShowAdminModal(false); setEditingUser(null); setAdminForm({ name: '', email: '', password: '', role: 'SUPPORT' }); }}>Cancel</Button>
+                     <Button type="submit" className="flex-1">{editingUser ? 'Update User' : 'Create Account'}</Button>
                   </div>
                </form>
             </Card>
@@ -176,6 +198,13 @@ const UserManagement = () => {
                                    title="Login as User"
                                 >
                                    <UserCheck className="w-4 h-4" />
+                                </button>
+                                <button
+                                   onClick={() => handleEdit(user)}
+                                   className="p-2 bg-gray-100 rounded-lg text-blue-400 hover:bg-blue-400 hover:text-white transition-all shadow-sm"
+                                   title="Edit User"
+                                >
+                                   <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                    onClick={async () => {

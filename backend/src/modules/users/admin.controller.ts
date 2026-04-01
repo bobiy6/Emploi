@@ -25,13 +25,26 @@ export const getAdminStats = async (req: any, res: Response) => {
       select: { id: true, name: true, email: true, createdAt: true }
     });
 
+    // Revenue breakdown by month
+    const allInvoices = await prisma.invoice.findMany({
+      where: { status: 'PAID' },
+      select: { amount: true, createdAt: true }
+    });
+
+    const revenueByMonth = allInvoices.reduce((acc: any, inv) => {
+      const month = inv.createdAt.toLocaleString('default', { month: 'short' });
+      acc[month] = (acc[month] || 0) + inv.amount;
+      return acc;
+    }, {});
+
     res.json({
       stats: {
         users: userCount,
         activeServices: serviceCount,
         totalOrders: orderCount,
         revenue: totalRevenue._sum.amount || 0,
-        openTickets
+        openTickets,
+        revenueByMonth
       },
       recentOrders,
       recentUsers

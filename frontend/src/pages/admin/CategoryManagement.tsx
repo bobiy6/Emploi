@@ -9,6 +9,7 @@ import api from '../../api';
 const CategoryManagement = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 
@@ -25,18 +26,31 @@ const CategoryManagement = () => {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/categories', { name, description });
-      alert('Category created');
+      if (editingCategory) {
+        await api.put(`/categories/${editingCategory.id}`, { name, description });
+        alert('Category updated');
+      } else {
+        await api.post('/categories', { name, description });
+        alert('Category created');
+      }
       setName('');
       setDescription('');
       setShowCreate(false);
+      setEditingCategory(null);
       fetchCategories();
     } catch (err) {
-      alert('Failed to create category');
+      alert('Operation failed');
     }
+  };
+
+  const handleEdit = (cat: any) => {
+    setEditingCategory(cat);
+    setName(cat.name);
+    setDescription(cat.description || '');
+    setShowCreate(true);
   };
 
   return (
@@ -51,14 +65,14 @@ const CategoryManagement = () => {
       {showCreate && (
          <Card className="p-8 border-2 border-rose-100 bg-rose-50/20 shadow-xl overflow-hidden">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-               <FolderTree className="w-5 h-5 text-rose-600" /> New Category
+               <FolderTree className="w-5 h-5 text-rose-600" /> {editingCategory ? 'Edit Category' : 'New Category'}
             </h3>
-            <form onSubmit={handleCreate} className="space-y-6">
+            <form onSubmit={handleSave} className="space-y-6">
                <Input label="Category Name" placeholder="e.g., Cloud Hosting" value={name} onChange={(e) => setName(e.target.value)} required />
                <Input label="Description" placeholder="Short description..." value={description} onChange={(e) => setDescription(e.target.value)} />
                <div className="flex justify-end gap-3 pt-4 border-t border-gray-50">
-                  <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
-                  <Button type="submit">Create Category</Button>
+                  <Button variant="ghost" onClick={() => { setShowCreate(false); setEditingCategory(null); setName(''); setDescription(''); }}>Cancel</Button>
+                  <Button type="submit">{editingCategory ? 'Update Category' : 'Create Category'}</Button>
                </div>
             </form>
          </Card>
@@ -72,7 +86,7 @@ const CategoryManagement = () => {
                      <FolderTree className="w-6 h-6" />
                   </div>
                   <div className="flex gap-2">
-                     <button className="text-gray-400 hover:text-blue-600"><Edit className="w-4 h-4" /></button>
+                     <button onClick={() => handleEdit(cat)} className="text-gray-400 hover:text-blue-600"><Edit className="w-4 h-4" /></button>
                      <button
                         onClick={async () => {
                            if(confirm('Delete category?')) {

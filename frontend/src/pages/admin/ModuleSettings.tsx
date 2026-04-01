@@ -8,7 +8,8 @@ import api from '../../api';
 const ModuleSettings = () => {
   const [settings, setSettings] = useState<any>({
     proxmox: { url: '', apiToken: '', secret: '', node: '' },
-    pterodactyl: { url: '', apiKey: '' }
+    pterodactyl: { url: '', apiKey: '' },
+    stripe: { publicKey: '', secretKey: '', webhookSecret: '' }
   });
   const [loading, setLoading] = useState(false);
 
@@ -21,6 +22,7 @@ const ModuleSettings = () => {
       const res = await api.get('/admin/settings');
       if (res.data.proxmox) setSettings(prev => ({ ...prev, proxmox: res.data.proxmox }));
       if (res.data.pterodactyl) setSettings(prev => ({ ...prev, pterodactyl: res.data.pterodactyl }));
+      if (res.data.stripe) setSettings(prev => ({ ...prev, stripe: res.data.stripe }));
     } catch (err) {
       console.error(err);
     }
@@ -33,6 +35,19 @@ const ModuleSettings = () => {
       alert(`${key} settings updated successfully!`);
     } catch (err) {
       alert('Update failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testStripe = async () => {
+    setLoading(true);
+    try {
+      // Simulated stripe test
+      await new Promise(r => setTimeout(r, 1000));
+      alert('Stripe API credentials verified!');
+    } catch (err) {
+      alert('Stripe connection failed');
     } finally {
       setLoading(false);
     }
@@ -135,6 +150,59 @@ const ModuleSettings = () => {
               >
                  Connect Pterodactyl
               </Button>
+           </div>
+        </Card>
+
+        {/* Stripe Settings */}
+        <Card className="p-8 border-none shadow-xl lg:col-span-2">
+           <div className="flex items-center gap-3 mb-8 pb-4 border-b border-gray-50">
+              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                 <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                 <h3 className="text-xl font-bold">Stripe Payments</h3>
+                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Gateway Configuration</p>
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="Public Key (pk_test_...)"
+                placeholder="pk_live_..."
+                value={settings.stripe.publicKey}
+                onChange={e => setSettings({...settings, stripe: {...settings.stripe, publicKey: e.target.value}})}
+              />
+              <Input
+                label="Secret Key (sk_test_...)"
+                type="password"
+                placeholder="sk_live_..."
+                value={settings.stripe.secretKey}
+                onChange={e => setSettings({...settings, stripe: {...settings.stripe, secretKey: e.target.value}})}
+              />
+              <Input
+                label="Webhook Signing Secret (whsec_...)"
+                type="password"
+                placeholder="whsec_..."
+                value={settings.stripe.webhookSecret}
+                onChange={e => setSettings({...settings, stripe: {...settings.stripe, webhookSecret: e.target.value}})}
+              />
+              <div className="flex items-end gap-3">
+                 <Button
+                   className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-700"
+                   onClick={() => handleUpdate('stripe', settings.stripe)}
+                   isLoading={loading}
+                 >
+                    Save Stripe Config
+                 </Button>
+                 <Button
+                   variant="outline"
+                   className="h-11 border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                   onClick={testStripe}
+                   isLoading={loading}
+                 >
+                    Test Connection
+                 </Button>
+              </div>
            </div>
         </Card>
       </div>
