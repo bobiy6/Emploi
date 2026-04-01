@@ -143,6 +143,19 @@ model TicketMessage {
   createdAt DateTime @default(now())
 }
 
+model Server {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String   // 'PROXMOX', 'PTERODACTYL'
+  url       String
+  apiKey    String
+  secret    String?
+  node      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model SystemSetting {
   id    Int    @id @default(autoincrement())
   key   String @unique

@@ -35,14 +35,19 @@ export const payInvoice = async (req: any, res: Response) => {
     if (product) {
         const nextDueDate = new Date();
         nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-        const module = product.type === 'VPS' ? 'proxmox' : 'pterodactyl';
-        const { getAdapter } = await import('../provisioning/provisioning.service.js');
-        const adapter = getAdapter(module);
+        const moduleName = product.type === 'VPS' ? 'proxmox' : 'pterodactyl';
+        const { getAdapter, getBestServer } = await import('../provisioning/provisioning.service.js');
+        const adapter = getAdapter(moduleName);
+        const server = await getBestServer(product.type);
+
         let externalId = null;
-        if (adapter) externalId = await adapter.create(product.config);
+        if (adapter && server) {
+            const config = (product.config as any) || {};
+            externalId = await adapter.create({ ...config, serverId: server.id });
+        }
 
         await prisma.service.create({
-            data: { userId, productId: product.id, status: 'ACTIVE', module, externalId, config: product.config || {}, nextDueDate }
+            data: { userId, productId: product.id, status: 'ACTIVE', module: moduleName, externalId, config: product.config || {}, nextDueDate }
         });
     }
     res.json({ message: 'Invoice paid and service provisioned' });

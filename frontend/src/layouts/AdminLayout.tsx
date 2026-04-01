@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, FolderTree, ClipboardList, ShieldAlert, LifeBuoy, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, FolderTree, ClipboardList, ShieldAlert, LifeBuoy, LogOut, Settings, BarChart3, HardDrive } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Badge } from '../components/ui/Badge';
+import { useAuth } from '../hooks/useAuth';
 
 const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
   <Link
@@ -22,22 +23,27 @@ const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
 
+  const isSupport = user?.role === 'SUPPORT';
+
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Stats Overview', to: '/admin' },
-    { icon: Users, label: 'User Management', to: '/admin/users' },
-    { icon: FolderTree, label: 'Categories', to: '/admin/categories' },
-    { icon: ShoppingBag, label: 'Product List', to: '/admin/products' },
-    { icon: ClipboardList, label: 'Order List', to: '/admin/orders' },
-    { icon: ShieldAlert, label: 'Active Services', to: '/admin/services' },
-    { icon: LifeBuoy, label: 'Support Tickets', to: '/admin/tickets' },
-    { icon: Settings, label: 'Module Settings', to: '/admin/settings' },
-  ];
+    { icon: LayoutDashboard, label: 'Stats Overview', to: '/admin', hide: false },
+    { icon: Users, label: 'User Management', to: '/admin/users', hide: isSupport },
+    { icon: FolderTree, label: 'Categories', to: '/admin/categories', hide: isSupport },
+    { icon: ShoppingBag, label: 'Product List', to: '/admin/products', hide: isSupport },
+    { icon: ClipboardList, label: 'Order List', to: '/admin/orders', hide: isSupport },
+    { icon: ShieldAlert, label: 'Active Services', to: '/admin/services', hide: isSupport },
+    { icon: LifeBuoy, label: 'Support Tickets', to: '/admin/tickets', hide: false },
+    { icon: BarChart3, label: 'Accounting', to: '/admin/accounting', hide: isSupport },
+    { icon: HardDrive, label: 'Infrastructure', to: '/admin/infrastructure', hide: isSupport },
+    { icon: Settings, label: 'Module Settings', to: '/admin/settings', hide: isSupport },
+  ].filter(item => !item.hide);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -64,7 +70,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
         <div className="mt-auto space-y-4 pt-6 border-t border-gray-200">
            <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-blue-600 hover:bg-blue-50 transition-all duration-200 w-full font-medium">
-             <LayoutDashboard className="w-5 h-5" />
+             <BarChart3 className="w-5 h-5" />
              Client Area
            </Link>
            <button
@@ -84,7 +90,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
              {menuItems.find(m => m.to === location.pathname)?.label || 'Administration'}
           </h2>
           <div className="flex items-center gap-4">
-             <Badge variant="danger" className="font-black tracking-widest text-[10px]">ADMINISTRATOR</Badge>
+             <Badge variant="danger" className="font-black tracking-widest text-[10px] uppercase">
+                {user?.role === 'ADMIN' ? 'FULL ADMINISTRATOR' : 'SUPPORT AGENT'}
+             </Badge>
           </div>
         </header>
 

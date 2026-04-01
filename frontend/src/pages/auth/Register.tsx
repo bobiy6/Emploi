@@ -9,6 +9,9 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isCompany, setIsCompany] = useState(false);
+  const [companyName, setCompanyName] = useState('');
+  const [vatNumber, setVatNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -18,7 +21,14 @@ const Register = () => {
     setError('');
     setLoading(true);
     try {
-      const res = await api.post('/auth/register', { name, email, password });
+      const res = await api.post('/auth/register', {
+        name,
+        email,
+        password,
+        isCompany,
+        companyName: isCompany ? companyName : null,
+        vatNumber: isCompany ? vatNumber : null
+      });
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err: any) {
@@ -67,7 +77,26 @@ const Register = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <Button type="submit" className="w-full h-12" isLoading={loading}>
+
+          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+             <input
+                type="checkbox"
+                id="isCompany"
+                className="w-5 h-5 accent-blue-600 cursor-pointer"
+                checked={isCompany}
+                onChange={e => setIsCompany(e.target.checked)}
+             />
+             <label htmlFor="isCompany" className="text-sm font-bold text-gray-700 cursor-pointer">I am registering as a company</label>
+          </div>
+
+          {isCompany && (
+             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                <Input label="Company Name" value={companyName} onChange={e => setCompanyName(e.target.value)} required />
+                <Input label="VAT Number" placeholder="e.g. BE0123456789" value={vatNumber} onChange={e => setVatNumber(e.target.value)} required />
+             </div>
+          )}
+
+          <Button type="submit" className="w-full h-12 mt-4" isLoading={loading}>
             Sign Up
           </Button>
         </form>

@@ -4,22 +4,25 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { CreditCard, FileText, Download, Wallet, ArrowUpRight } from 'lucide-react';
 import api from '../../api';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Billing = () => {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingPay, setLoadingPay] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        const res = await api.get('/billing');
-        setInvoices(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
     fetchInvoices();
   }, []);
+
+  const fetchInvoices = async () => {
+    try {
+      const res = await api.get('/billing');
+      setInvoices(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handlePay = async (invoiceId: number) => {
     setLoadingPay(invoiceId);
@@ -36,18 +39,44 @@ const Billing = () => {
     }
   };
 
-  const handleDownload = async (invoiceId: number) => {
-    try {
-      const response = await api.get(`/billing/${invoiceId}/download`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `invoice-${invoiceId}.txt`);
-      document.body.appendChild(link);
-      link.click();
-    } catch (err) {
-      alert('Download failed');
+  const handleDownload = async (invoice: any) => {
+    const doc = new jsPDF();
+    const user = invoice.user || {};
+
+    doc.setFontSize(22);
+    doc.text('HostDash - Invoice', 20, 20);
+    doc.setFontSize(10);
+    doc.text(`Invoice ID: #INV-${invoice.id}`, 20, 30);
+    doc.text(`Date: ${new Date(invoice.createdAt).toLocaleDateString()}`, 20, 35);
+    doc.text(`Status: ${invoice.status}`, 20, 40);
+
+    doc.setFontSize(14);
+    doc.text('Customer Details', 20, 55);
+    doc.setFontSize(10);
+    doc.text(`Name: ${user.name}`, 20, 65);
+    if(user.isCompany) {
+       doc.text(`Company: ${user.companyName}`, 20, 70);
+       doc.text(`VAT: ${user.vatNumber}`, 20, 75);
     }
+    doc.text(`Address: ${user.address || 'N/A'}`, 20, user.isCompany ? 80 : 70);
+
+    autoTable(doc, {
+      startY: 90,
+      head: [['Product', 'Description', 'Total']],
+      body: [[
+        invoice.order?.product?.name || 'Manual Credit',
+        invoice.order?.product?.description || 'Service subscription',
+        `${invoice.amount.toFixed(2)}€`
+      ]],
+      theme: 'grid',
+      headStyles: { fillColor: [71, 103, 255] }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(14);
+    doc.text(`Total Paid: ${invoice.amount.toFixed(2)}€`, 150, finalY);
+
+    doc.save(`invoice-${invoice.id}.pdf`);
   };
 
   return (
@@ -134,7 +163,7 @@ const Billing = () => {
                                 </Button>
                              ) : (
                                 <button
-                                   onClick={() => handleDownload(inv.id)}
+                                   onClick={() => handleDownload(inv)}
                                    className="text-blue-600 font-bold text-xs flex items-center gap-1 hover:underline"
                                 >
                                    <Download className="w-3 h-3" /> PDF
