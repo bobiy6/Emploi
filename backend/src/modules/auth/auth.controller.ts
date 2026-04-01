@@ -37,11 +37,36 @@ export const getProfile = async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
-      select: { id: true, email: true, name: true, role: true, balance: true, createdAt: true },
+      select: {
+        id: true, email: true, name: true, role: true, balance: true,
+        isCompany: true, companyName: true, vatNumber: true, address: true,
+        createdAt: true
+      },
     });
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Could not fetch profile', error });
+  }
+};
+
+export const updateProfile = async (req: any, res: Response) => {
+  const { name, email, isCompany, companyName, vatNumber, address, password } = req.body;
+  const updateData: any = { name, email, isCompany, companyName, vatNumber, address };
+
+  try {
+    if (password) {
+      const bcrypt = (await import('bcryptjs')).default;
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.userId },
+      data: updateData,
+    });
+
+    res.json({ message: 'Profile updated', user: { id: user.id, email: user.email, name: user.name } });
+  } catch (error) {
+    res.status(500).json({ message: 'Update failed', error });
   }
 };

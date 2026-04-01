@@ -62,3 +62,35 @@ export const getAllInvoices = async (req: any, res: Response) => {
     res.status(500).json({ message: 'Error fetching all invoices', error });
   }
 };
+
+export const downloadInvoicePDF = async (req: any, res: Response) => {
+  const { id } = req.params;
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: parseInt(id as string) },
+      include: { user: true, order: { include: { product: true } } }
+    });
+
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+    // Mock PDF Generation
+    const pdfContent = `
+      INVOICE #${invoice.id}
+      -------------------
+      Customer: ${invoice.user.name}
+      ${invoice.user.isCompany ? `Company: ${invoice.user.companyName}\nVAT: ${invoice.user.vatNumber}` : 'Individual'}
+      Address: ${invoice.user.address || 'N/A'}
+
+      Item: ${invoice.order?.product?.name}
+      Amount: ${invoice.amount}€
+      Status: ${invoice.status}
+      Date: ${invoice.createdAt.toLocaleDateString()}
+    `;
+
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${id}.txt`);
+    res.send(pdfContent);
+  } catch (error) {
+    res.status(500).json({ message: 'Error generating invoice', error });
+  }
+};

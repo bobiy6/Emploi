@@ -9,6 +9,7 @@ import orderRoutes from './modules/orders/orders.routes.js';
 import billingRoutes from './modules/billing/billing.routes.js';
 import serviceRoutes from './modules/services/services.routes.js';
 import supportRoutes from './modules/support/support.routes.js';
+import adminSettingsRoutes from './modules/admin/settings.routes.js';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/admin/settings', adminSettingsRoutes);
 
 app.get('/health', (req, res) => { res.json({ status: 'ok' }); });
 

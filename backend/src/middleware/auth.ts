@@ -30,7 +30,7 @@ export const adminMiddleware = async (req: any, res: Response, next: NextFunctio
 
   try {
     const user = await import('../config/prisma.js').then(m => m.default.user.findUnique({ where: { id: userId } }));
-    if (user?.role !== 'ADMIN') {
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'SUPPORT')) {
       return res.status(403).json({ message: 'Forbidden: Admin access only' });
     }
     next();
