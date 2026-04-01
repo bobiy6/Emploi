@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -20,29 +20,31 @@ import AdminTicketManagement from './pages/admin/TicketManagement';
 const App = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* Protected Routes */}
-        <Route path="/dashboard" element={<ClientLayout><Dashboard /></ClientLayout>} />
-        <Route path="/services" element={<ClientLayout><Services /></ClientLayout>} />
-        <Route path="/store" element={<ClientLayout><Store /></ClientLayout>} />
-        <Route path="/billing" element={<ClientLayout><Billing /></ClientLayout>} />
-        <Route path="/support" element={<ClientLayout><Support /></ClientLayout>} />
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={<ClientLayout><Dashboard /></ClientLayout>} />
+          <Route path="/services" element={<ClientLayout><Services /></ClientLayout>} />
+          <Route path="/store" element={<ClientLayout><Store /></ClientLayout>} />
+          <Route path="/billing" element={<ClientLayout><Billing /></ClientLayout>} />
+          <Route path="/support" element={<ClientLayout><Support /></ClientLayout>} />
 
-        {/* Admin Routes */}
-        <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-        <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
-        <Route path="/admin/products" element={<AdminLayout><ProductCatalog /></AdminLayout>} />
-        <Route path="/admin/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
-        <Route path="/admin/orders" element={<AdminLayout><OrderManagement /></AdminLayout>} />
-        <Route path="/admin/services" element={<AdminLayout><AdminServiceManagement /></AdminLayout>} />
-        <Route path="/admin/tickets" element={<AdminLayout><AdminTicketManagement /></AdminLayout>} />
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+          <Route path="/admin/users" element={<AdminLayout><UserManagement /></AdminLayout>} />
+          <Route path="/admin/products" element={<AdminLayout><ProductCatalog /></AdminLayout>} />
+          <Route path="/admin/categories" element={<AdminLayout><CategoryManagement /></AdminLayout>} />
+          <Route path="/admin/orders" element={<AdminLayout><OrderManagement /></AdminLayout>} />
+          <Route path="/admin/services" element={<AdminLayout><AdminServiceManagement /></AdminLayout>} />
+          <Route path="/admin/tickets" element={<AdminLayout><AdminTicketManagement /></AdminLayout>} />
 
-        {/* Redirects */}
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-      </Routes>
+          {/* Redirects */}
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 };
