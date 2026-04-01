@@ -13,6 +13,7 @@ datasource db {
 enum Role {
   USER
   ADMIN
+  SUPPORT
 }
 
 enum OrderStatus {
@@ -39,14 +40,15 @@ enum TicketStatus {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(USER)
-  balance   Float    @default(0.0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  name        String
+  role        Role     @default(USER)
+  permissions Json?    // Array of string permissions for sub-admins
+  balance     Float    @default(0.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   orders   Order[]
   services Service[]

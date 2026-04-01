@@ -5,11 +5,32 @@ import { generateToken } from '../../middleware/auth.js';
 export const getAllUsers = async (req: any, res: Response) => {
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, email: true, name: true, role: true, balance: true, createdAt: true }
+      select: { id: true, email: true, name: true, role: true, permissions: true, balance: true, createdAt: true }
     });
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users', error });
+  }
+};
+
+export const createAdminUser = async (req: any, res: Response) => {
+  const { email, password, name, role, permissions } = req.body;
+  const bcrypt = (await import('bcryptjs')).default;
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        role, // ADMIN or SUPPORT
+        permissions: permissions || []
+      }
+    });
+    res.status(201).json({ id: user.id, email: user.email, name: user.name, role: user.role });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating admin user', error });
   }
 };
 

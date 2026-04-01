@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminForm, setAdminForm] = useState({ name: '', email: '', password: '', role: 'SUPPORT' });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,12 +50,28 @@ const UserManagement = () => {
     }
   };
 
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/users/admin', adminForm);
+      alert('Admin account created');
+      setShowAdminModal(false);
+      const res = await api.get('/users');
+      setUsers(res.data);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Creation failed');
+    }
+  };
+
   const filteredUsers = users.filter(u => u.email.toLowerCase().includes(search.toLowerCase()) || u.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
-        <h2 className="text-3xl font-black text-gray-900">User Management</h2>
+        <div className="flex items-center gap-4">
+           <h2 className="text-3xl font-black text-gray-900">User Management</h2>
+           <Button size="sm" variant="outline" onClick={() => setShowAdminModal(true)}>+ New Admin</Button>
+        </div>
         <div className="relative max-w-sm w-full">
            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
            <Input
@@ -64,6 +82,34 @@ const UserManagement = () => {
            />
         </div>
       </div>
+
+      {showAdminModal && (
+         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+               <h3 className="text-2xl font-bold mb-6">Create Staff Account</h3>
+               <form onSubmit={handleCreateAdmin} className="space-y-4">
+                  <Input label="Name" value={adminForm.name} onChange={e => setAdminForm({...adminForm, name: e.target.value})} required />
+                  <Input label="Email" type="email" value={adminForm.email} onChange={e => setAdminForm({...adminForm, email: e.target.value})} required />
+                  <Input label="Password" type="password" value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} required />
+                  <div className="space-y-1">
+                     <label className="text-sm font-medium ml-1">Staff Role</label>
+                     <select
+                        className="w-full h-11 px-4 rounded-xl border border-gray-200"
+                        value={adminForm.role}
+                        onChange={e => setAdminForm({...adminForm, role: e.target.value})}
+                     >
+                        <option value="ADMIN">Full Administrator</option>
+                        <option value="SUPPORT">Support Agent (Limited)</option>
+                     </select>
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                     <Button variant="ghost" className="flex-1" onClick={() => setShowAdminModal(false)}>Cancel</Button>
+                     <Button type="submit" className="flex-1">Create Account</Button>
+                  </div>
+               </form>
+            </Card>
+         </div>
+      )}
 
       <Card className="p-0 border-none overflow-hidden shadow-xl">
            <table className="w-full text-left">

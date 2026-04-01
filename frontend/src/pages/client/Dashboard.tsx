@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Server, ShieldCheck, CreditCard, Activity } from 'lucide-react';
+import { Server, ShieldCheck, CreditCard, Activity, LifeBuoy } from 'lucide-react';
 import api from '../../api';
 
 const StatCard = ({ icon: Icon, label, value, color }: any) => (
