@@ -10,6 +10,7 @@ const ProductCatalog = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [type, setType] = useState('VPS');
@@ -31,23 +32,48 @@ const ProductCatalog = () => {
     fetchData();
   }, []);
 
-  const handleCreateProduct = async (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      name,
+      price: parseFloat(price),
+      type,
+      categoryId: parseInt(categoryId),
+      config: type === 'VPS' ? { cpu: 2, ram: '4GB', disk: '40GB' } : { slots: 32 }
+    };
+
     try {
-      await api.post('/products', {
-         name,
-         price: parseFloat(price),
-         type,
-         categoryId: parseInt(categoryId),
-         config: type === 'VPS' ? { cpu: 2, ram: '4GB', disk: '40GB' } : { slots: 32 }
-      });
-      alert('Product created');
+      if (editingProduct) {
+        await api.put(`/products/${editingProduct.id}`, payload);
+        alert('Product updated');
+      } else {
+        await api.post('/products', payload);
+        alert('Product created');
+      }
       const res = await api.get('/products');
       setProducts(res.data);
       setShowCreate(false);
+      setEditingProduct(null);
+      resetForm();
     } catch (err) {
-      alert('Failed to create product');
+      alert('Operation failed');
     }
+  };
+
+  const resetForm = () => {
+    setName('');
+    setPrice('');
+    setType('VPS');
+    setCategoryId('');
+  };
+
+  const handleEdit = (prod: any) => {
+    setEditingProduct(prod);
+    setName(prod.name);
+    setPrice(prod.price.toString());
+    setType(prod.type);
+    setCategoryId(prod.categoryId.toString());
+    setShowCreate(true);
   };
 
   return (
@@ -62,9 +88,9 @@ const ProductCatalog = () => {
       {showCreate && (
          <Card className="p-8 border-2 border-rose-100 bg-rose-50/20 shadow-xl overflow-hidden">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-               <Package className="w-5 h-5 text-rose-600" /> Configure New Product
+               <Package className="w-5 h-5 text-rose-600" /> {editingProduct ? 'Edit Product' : 'Configure New Product'}
             </h3>
-            <form onSubmit={handleCreateProduct} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSaveProduct} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <Input label="Product Name" placeholder="e.g., VPS Premium XL" value={name} onChange={(e) => setName(e.target.value)} required />
                <Input label="Price (€)" type="number" step="0.01" placeholder="9.99" value={price} onChange={(e) => setPrice(e.target.value)} required />
 
@@ -94,8 +120,8 @@ const ProductCatalog = () => {
                </div>
 
                <div className="md:col-span-2 flex justify-end gap-3 pt-4 border-t border-gray-50">
-                  <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
-                  <Button type="submit">Create Product</Button>
+                  <Button variant="ghost" onClick={() => { setShowCreate(false); setEditingProduct(null); resetForm(); }}>Cancel</Button>
+                  <Button type="submit">{editingProduct ? 'Update Product' : 'Create Product'}</Button>
                </div>
             </form>
          </Card>
@@ -137,7 +163,12 @@ const ProductCatalog = () => {
                           <td className="px-8 py-6 font-black text-gray-900">{prod.price.toFixed(2)}€</td>
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-2">
-                                <button className="p-2 bg-gray-100 rounded-lg text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Edit className="w-4 h-4" /></button>
+                                <button
+                                   onClick={() => handleEdit(prod)}
+                                   className="p-2 bg-gray-100 rounded-lg text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                >
+                                   <Edit className="w-4 h-4" />
+                                </button>
                                 <button
                                    onClick={async () => {
                                       if(confirm('Delete product?')) {
