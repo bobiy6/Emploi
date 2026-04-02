@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import prisma from '../../config/prisma.js';
+import { createLog } from '../../utils/logger.js';
 
 export const getMyInvoices = async (req: any, res: Response) => {
   try {
@@ -31,12 +32,20 @@ export const payInvoice = async (req: any, res: Response) => {
       prisma.order.update({ where: { id: invoice.orderId! }, data: { status: 'PAID' } })
     ]);
 
+    createLog({ type: 'SERVICE', level: 'INFO', message: `Invoice paid: #INV-${invoice.id}`, userId, details: { amount: invoice.amount } });
+
     const product = invoice.order?.product;
     if (product) {
+        let createdService: any = null;
         try {
             const nextDueDate = new Date();
             nextDueDate.setMonth(nextDueDate.getMonth() + 1);
             const moduleName = product.type === 'VPS' ? 'proxmox' : 'pterodactyl';
+
+            createdService = await prisma.service.create({
+                data: { userId, productId: product.id, status: 'SUSPENDED', module: moduleName, config: product.config || {}, nextDueDate }
+            });
+
             const { getAdapter, getBestServer } = await import('../provisioning/provisioning.service.js');
             const adapter = getAdapter(moduleName);
             const server = await getBestServer(product.type);
@@ -49,12 +58,30 @@ export const payInvoice = async (req: any, res: Response) => {
                 externalId = await adapter.create(config, server);
             }
 
-            await prisma.service.create({
-                data: { userId, productId: product.id, status: 'ACTIVE', module: moduleName, externalId, config: product.config || {}, nextDueDate }
+            await prisma.service.update({
+                where: { id: createdService.id },
+                data: { status: 'ACTIVE', externalId }
             });
+
+            await createLog({
+              type: 'PROVISIONING',
+              level: 'INFO',
+              message: `Successfully provisioned ${product.type} service`,
+              userId,
+              serviceId: createdService.id,
+              details: { externalId }
+            });
+
         } catch (provisionError: any) {
             console.error('[PROVISIONING ERROR]:', provisionError.message);
-            // In real app, you might want to queue this or notify admin
+            await createLog({
+              type: 'PROVISIONING',
+              level: 'ERROR',
+              message: `Provisioning failed for ${product.type}`,
+              userId,
+              serviceId: createdService?.id,
+              details: { error: provisionError.message }
+            });
         }
     }
     res.json({ message: 'Invoice paid and service provisioned' });

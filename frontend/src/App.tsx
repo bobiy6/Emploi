@@ -20,6 +20,7 @@ import AdminTicketManagement from './pages/admin/TicketManagement';
 import ModuleSettings from './pages/admin/ModuleSettings';
 import Accounting from './pages/admin/Accounting';
 import Infrastructure from './pages/admin/Infrastructure';
+import LogViewer from './pages/admin/LogViewer';
 import { AdminGuard } from './components/AdminGuard';
 
 const App = () => {
@@ -48,6 +49,7 @@ const App = () => {
           <Route path="/admin/tickets" element={<AdminGuard><AdminLayout><AdminTicketManagement /></AdminLayout></AdminGuard>} />
           <Route path="/admin/accounting" element={<AdminGuard><AdminLayout><Accounting /></AdminLayout></AdminGuard>} />
           <Route path="/admin/infrastructure" element={<AdminGuard><AdminLayout><Infrastructure /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/logs" element={<AdminGuard><AdminLayout><LogViewer /></AdminLayout></AdminGuard>} />
           <Route path="/admin/settings" element={<AdminGuard><AdminLayout><ModuleSettings /></AdminLayout></AdminGuard>} />
 
           {/* Redirects */}

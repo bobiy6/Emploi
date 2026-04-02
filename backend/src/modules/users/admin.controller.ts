@@ -37,6 +37,28 @@ export const getAdminStats = async (req: any, res: Response) => {
       return acc;
     }, {});
 
+    // New Log stats
+    const recentLogs = await prisma.log.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { name: true } } }
+    });
+
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const errorCount24h = await prisma.log.count({
+      where: {
+        level: 'ERROR',
+        createdAt: { gte: last24h }
+      }
+    });
+
+    const provisioningErrors = await prisma.log.count({
+      where: {
+        type: 'PROVISIONING',
+        level: 'ERROR'
+      }
+    });
+
     res.json({
       stats: {
         users: userCount,
@@ -44,10 +66,13 @@ export const getAdminStats = async (req: any, res: Response) => {
         totalOrders: orderCount,
         revenue: totalRevenue._sum.amount || 0,
         openTickets,
-        revenueByMonth
+        revenueByMonth,
+        errorCount24h,
+        provisioningErrors
       },
       recentOrders,
-      recentUsers
+      recentUsers,
+      recentLogs
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching stats', error });

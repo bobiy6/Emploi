@@ -1,5 +1,6 @@
 import { ProvisioningAdapter } from '../provisioning.interface.js';
 import axios from 'axios';
+import { createLog } from '../../../utils/logger.js';
 
 export class PterodactylAdapter implements ProvisioningAdapter {
   private async getAuthHeader(server: any) {
@@ -11,7 +12,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   }
 
   async create(config: any, server: any): Promise<string> {
-    const res = await axios.post(`${server.url}/api/application/servers`, {
+    const requestData = {
       name: config.name || 'Game Server',
       user: config.pterodactyl_user_id || 1,
       egg: config.egg_id || 1,
@@ -32,9 +33,16 @@ export class PterodactylAdapter implements ProvisioningAdapter {
       allocation: {
         default: config.allocation_id || 1
       }
-    }, { headers: await this.getAuthHeader(server) });
+    };
 
-    return res.data.attributes.id.toString();
+    try {
+        const res = await axios.post(`${server.url}/api/application/servers`, requestData, { headers: await this.getAuthHeader(server) });
+        createLog({ type: 'PROVISIONING', level: 'INFO', message: `Pterodactyl server created: ${res.data.attributes.identifier}`, details: { request: requestData, response: res.data } });
+        return res.data.attributes.id.toString();
+    } catch (err: any) {
+        createLog({ type: 'ERROR', level: 'ERROR', message: `Pterodactyl server creation failed`, details: { error: err.message, request: requestData } });
+        throw err;
+    }
   }
 
   async suspend(externalId: string, server: any): Promise<boolean> {
