@@ -59,6 +59,7 @@ model User {
   invoices Invoice[]
   tickets  Ticket[]
   TicketMessage TicketMessage[]
+  logs     Log[]
 }
 
 model Category {
@@ -107,6 +108,7 @@ model Service {
   nextDueDate  DateTime
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  logs         Log[]
 }
 
 model Invoice {
@@ -160,4 +162,17 @@ model SystemSetting {
   id    Int    @id @default(autoincrement())
   key   String @unique
   value Json
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  type      String   // 'API', 'PROVISIONING', 'SERVICE', 'ERROR', 'AUTH'
+  level     String   // 'INFO', 'WARN', 'ERROR'
+  message   String
+  details   Json?
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  serviceId Int?
+  service   Service? @relation(fields: [serviceId], references: [id])
+  createdAt DateTime @default(now())
 }

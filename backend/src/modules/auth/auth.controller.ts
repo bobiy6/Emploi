@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/prisma.js';
 import { generateToken } from '../../middleware/auth.js';
+import { createLog } from '../../utils/logger.js';
 
 export const register = async (req: Request, res: Response) => {
   const { email, password, name, isCompany, companyName, vatNumber } = req.body;
@@ -12,9 +13,23 @@ export const register = async (req: Request, res: Response) => {
     const user = await prisma.user.create({
       data: { email, password: hashedPassword, name, isCompany, companyName, vatNumber },
     });
+
+    await createLog({
+      type: 'AUTH',
+      level: 'INFO',
+      message: `New user registered: ${email}`,
+      userId: user.id
+    });
+
     const token = generateToken(user.id, user.role);
     res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
-  } catch (error) {
+  } catch (error: any) {
+    await createLog({
+      type: 'AUTH',
+      level: 'ERROR',
+      message: `Registration failed for ${email}`,
+      details: { error: error.message }
+    });
     res.status(500).json({ message: 'Registration failed', error });
   }
 };
@@ -23,12 +38,41 @@ export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   try {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      await createLog({
+        type: 'AUTH',
+        level: 'WARN',
+        message: `Failed login attempt for non-existent email: ${email}`,
+      });
+      return res.status(404).json({ message: 'User not found' });
+    }
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!isMatch) {
+      await createLog({
+        type: 'AUTH',
+        level: 'WARN',
+        message: `Failed login attempt for user: ${email}`,
+        userId: user.id
+      });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    await createLog({
+      type: 'AUTH',
+      level: 'INFO',
+      message: `User logged in: ${email}`,
+      userId: user.id
+    });
+
     const token = generateToken(user.id, user.role);
     res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
-  } catch (error) {
+  } catch (error: any) {
+    await createLog({
+      type: 'AUTH',
+      level: 'ERROR',
+      message: `Login error for ${email}`,
+      details: { error: error.message }
+    });
     res.status(500).json({ message: 'Login failed', error });
   }
 };

@@ -1,5 +1,6 @@
 import { ProvisioningAdapter } from '../provisioning.interface.js';
 import axios from 'axios';
+import { createLog } from '../../../utils/logger.js';
 
 export class ProxmoxAdapter implements ProvisioningAdapter {
   private async getAuthHeader(server: any) {
@@ -13,7 +14,7 @@ export class ProxmoxAdapter implements ProvisioningAdapter {
     const nextIdRes = await axios.get(`${server.url}/cluster/nextid`, { headers: await this.getAuthHeader(server) });
     const vmid = nextIdRes.data.data;
 
-    await axios.post(`${server.url}/nodes/${node}/qemu`, {
+    const requestData = {
       vmid,
       name: config.name || `vps-${vmid}`,
       memory: parseInt(config.ram) * 1024 || 2048,
@@ -21,9 +22,16 @@ export class ProxmoxAdapter implements ProvisioningAdapter {
       net0: 'virtio,bridge=vmbr0',
       scsihw: 'virtio-scsi-pci',
       virtio0: `local-lvm:vm-${vmid}-disk-1,size=${config.disk || '20G'}`
-    }, { headers: await this.getAuthHeader(server) });
+    };
 
-    return vmid.toString();
+    try {
+        await axios.post(`${server.url}/nodes/${node}/qemu`, requestData, { headers: await this.getAuthHeader(server) });
+        createLog({ type: 'PROVISIONING', level: 'INFO', message: `Proxmox VM created: ${vmid}`, details: { request: requestData } });
+        return vmid.toString();
+    } catch (err: any) {
+        createLog({ type: 'ERROR', level: 'ERROR', message: `Proxmox VM creation failed: ${vmid}`, details: { error: err.message, request: requestData } });
+        throw err;
+    }
   }
 
   async suspend(externalId: string, server: any): Promise<boolean> {

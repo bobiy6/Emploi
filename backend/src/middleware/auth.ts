@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Response, NextFunction } from 'express';
+import { createLog } from '../utils/logger.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
@@ -20,6 +21,7 @@ export const authMiddleware = (req: any, res: Response, next: NextFunction) => {
     req.userRole = decoded.role;
     next();
   } catch (error) {
+    createLog({ type: 'AUTH', level: 'WARN', message: 'Failed authentication attempt', details: { error } });
     res.status(401).json({ message: 'Invalid token' });
   }
 };
