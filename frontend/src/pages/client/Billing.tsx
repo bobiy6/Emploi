@@ -6,10 +6,25 @@ import { CreditCard, FileText, Download, Wallet, ArrowUpRight } from 'lucide-rea
 import api from '../../api';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import AddFundsModal from '../../components/AddFundsModal';
 
 const Billing = () => {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingPay, setLoadingPay] = useState<number | null>(null);
+  const [showAddFunds, setShowAddFunds] = useState(false);
+  const [stripePromise, setStripePromise] = useState<any>(null);
+
+  useEffect(() => {
+     const initStripe = async () => {
+        const { data } = await api.get('/admin/settings');
+        if (data.stripe?.publicKey) {
+           setStripePromise(loadStripe(data.stripe.publicKey));
+        }
+     };
+     initStripe();
+  }, []);
 
   useEffect(() => {
     fetchInvoices();
@@ -89,7 +104,11 @@ const Billing = () => {
              </div>
              <p className="text-sm font-bold text-indigo-100 mb-1 uppercase tracking-widest">Available Credit</p>
              <h3 className="text-4xl font-black mb-6">15.00€</h3>
-             <Button variant="secondary" className="w-full bg-white text-indigo-700 border-none h-12 font-bold group-hover:scale-105 transition-transform">
+             <Button
+                variant="secondary"
+                className="w-full bg-white text-indigo-700 border-none h-12 font-bold group-hover:scale-105 transition-transform"
+                onClick={() => setShowAddFunds(true)}
+             >
                 Add Funds <ArrowUpRight className="ml-2 w-4 h-4" />
              </Button>
           </div>
@@ -126,6 +145,12 @@ const Billing = () => {
            </Card>
         </div>
       </div>
+
+      {showAddFunds && stripePromise && (
+         <Elements stripe={stripePromise}>
+            <AddFundsModal onClose={() => setShowAddFunds(false)} onRefresh={fetchInvoices} />
+         </Elements>
+      )}
 
       <div className="space-y-6">
         <h2 className="text-2xl font-black text-gray-900">Invoice History</h2>

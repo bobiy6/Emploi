@@ -31,11 +31,19 @@ export const powerAction = async (req: any, res: Response) => {
   const { id } = req.params;
   const { action } = req.body;
   try {
-    const service = await prisma.service.findUnique({ where: { id: parseInt(id as string) } });
+    const service = await prisma.service.findUnique({
+        where: { id: parseInt(id as string) },
+        include: { product: true }
+    });
     if (!service || service.userId !== req.userId) return res.status(404).json({ message: 'Service not found' });
-    const { getAdapter } = await import('../provisioning/provisioning.service.js');
+
+    const { getAdapter, getBestServer } = await import('../provisioning/provisioning.service.js');
     const adapter = getAdapter(service.module);
-    if (adapter && service.externalId) await adapter.powerAction(service.externalId, action);
+    const server = await getBestServer(service.product.type);
+
+    if (adapter && service.externalId && server) {
+        await adapter.powerAction(service.externalId, action, server);
+    }
     res.json({ message: `Service ${action} successful` });
   } catch (error) {
     res.status(500).json({ message: 'Error performing power action', error });

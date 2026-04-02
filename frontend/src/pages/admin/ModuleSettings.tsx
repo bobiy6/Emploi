@@ -43,11 +43,10 @@ const ModuleSettings = () => {
   const testStripe = async () => {
     setLoading(true);
     try {
-      // Simulated stripe test
-      await new Promise(r => setTimeout(r, 1000));
-      alert('Stripe API credentials verified!');
-    } catch (err) {
-      alert('Stripe connection failed');
+      const res = await api.post('/admin/settings/test-stripe', { secretKey: settings.stripe.secretKey });
+      alert(res.data.message);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Stripe connection failed');
     } finally {
       setLoading(false);
     }
