@@ -56,7 +56,7 @@ const AdminTicketManagement = () => {
         <div className="flex gap-8 flex-1 overflow-hidden">
           <div className="flex-1 flex flex-col space-y-6">
             <Card className="flex-1 overflow-y-auto space-y-6 p-8 shadow-inner bg-gray-50/50">
-               {selectedTicket.messages.map((msg: any) => (
+   {selectedTicket.messages?.map((msg: any) => (
                   <div key={msg.id} className={`flex ${msg.isAdmin ? 'justify-end' : 'justify-start'}`}>
                      <div className={`max-w-[80%] p-5 rounded-3xl shadow-sm ${
                         msg.isAdmin
