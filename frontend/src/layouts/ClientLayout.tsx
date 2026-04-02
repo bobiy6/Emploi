@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Server, CreditCard, LifeBuoy, ShoppingCart, LogOut, Settings, User } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { useAuth } from '../hooks/useAuth';
 
 const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
   <Link
@@ -21,9 +22,10 @@ const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
 const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
@@ -33,7 +35,6 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
     { icon: ShoppingCart, label: 'Store', to: '/store' },
     { icon: CreditCard, label: 'Billing', to: '/billing' },
     { icon: LifeBuoy, label: 'Support', to: '/support' },
-    { icon: Settings, label: 'Settings', to: '/settings' },
   ];
 
   return (
@@ -57,10 +58,10 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
               active={location.pathname === item.to}
             />
           ))}
+          <SidebarItem icon={Settings} label="Settings" to="/settings" active={location.pathname === '/settings'} />
         </nav>
 
         <div className="mt-auto space-y-4 pt-6 border-t border-gray-200">
-           <SidebarItem icon={Settings} label="Settings" to="/settings" active={location.pathname === '/settings'} />
            <button
              onClick={handleLogout}
              className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all duration-200 w-full font-medium"
@@ -79,8 +80,8 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
           </h2>
           <div className="flex items-center gap-4">
              <div className="text-right mr-2">
-                <p className="text-sm font-bold text-gray-900">User Profile</p>
-                <p className="text-xs text-gray-500">Credit: 15.00€</p>
+                <p className="text-sm font-bold text-gray-900">{user?.name || 'Loading...'}</p>
+                <p className="text-xs text-gray-500">Credit: {user?.balance?.toFixed(2) || '0.00'}€</p>
              </div>
              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white shadow-sm">
                 <User className="text-blue-600 w-5 h-5" />

@@ -3,7 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Users, Mail, DollarSign, LogIn, Edit, Search, UserCheck } from 'lucide-react';
+import { Users, Mail, DollarSign, LogIn, Edit, Search, UserCheck, Plus, Trash2 } from 'lucide-react';
 import api from '../../api';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,16 +16,17 @@ const UserManagement = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await api.get('/users');
-        setUsers(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
     fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/users');
+      setUsers(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleImpersonate = async (userId: number) => {
     try {
@@ -46,8 +47,7 @@ const UserManagement = () => {
     try {
       await api.post(`/users/${userId}/balance`, { amount: finalAmount });
       alert('Balance updated');
-      const res = await api.get('/users');
-      setUsers(res.data);
+      fetchUsers();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Update failed');
     }
@@ -66,8 +66,7 @@ const UserManagement = () => {
       setShowAdminModal(false);
       setEditingUser(null);
       setAdminForm({ name: '', email: '', password: '', role: 'SUPPORT' });
-      const res = await api.get('/users');
-      setUsers(res.data);
+      fetchUsers();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Operation failed');
     }
@@ -157,17 +156,17 @@ const UserManagement = () => {
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-600 border-2 border-white shadow-sm">
-                                   {user.name.charAt(0)}
+                                   {user.name?.charAt(0) || 'U'}
                                 </div>
                                 <div>
-                                   <p className="font-bold text-gray-900">{user.name}</p>
+                                   <p className="font-bold text-gray-900">{user.name || 'Unknown'}</p>
                                    <p className="text-xs text-gray-400 font-medium flex items-center gap-1">
                                       <Mail className="w-3 h-3" /> {user.email}
                                    </p>
                                 </div>
                              </div>
                           </td>
-                          <td className="px-8 py-6 font-black text-emerald-600">{user.balance.toFixed(2)}€</td>
+                          <td className="px-8 py-6 font-black text-emerald-600">{(user.balance || 0).toFixed(2)}€</td>
                           <td className="px-8 py-6">
                              <Badge variant={user.role === 'ADMIN' ? 'danger' : 'primary'}>
                                 {user.role}
@@ -210,7 +209,7 @@ const UserManagement = () => {
                                    onClick={async () => {
                                       if(confirm('Delete user?')) {
                                          await api.delete(`/users/${user.id}`);
-                                         setUsers(users.filter(u => u.id !== user.id));
+                                         fetchUsers();
                                       }
                                    }}
                                    className="p-2 bg-gray-100 rounded-lg text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"

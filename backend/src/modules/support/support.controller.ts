@@ -46,7 +46,8 @@ export const getTicketById = async (req: any, res: Response) => {
       where: { id: parseInt(id as string) },
       include: { messages: { orderBy: { createdAt: 'asc' } } }
     });
-    if (!ticket || (ticket.userId !== req.userId && req.userRole !== 'ADMIN')) {
+    const isStaff = req.userRole === 'ADMIN' || req.userRole === 'SUPPORT';
+    if (!ticket || (ticket.userId !== req.userId && !isStaff)) {
       return res.status(404).json({ message: 'Ticket not found' });
     }
     res.json(ticket);
@@ -65,21 +66,21 @@ export const replyToTicket = async (req: any, res: Response) => {
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    const isAdmin = user?.role === 'ADMIN';
+    const isStaff = user?.role === 'ADMIN' || user?.role === 'SUPPORT';
 
     const newMessage = await prisma.ticketMessage.create({
       data: {
         ticketId: ticket.id,
         userId,
         message,
-        isAdmin
+        isAdmin: isStaff
       }
     });
 
     await prisma.ticket.update({
       where: { id: ticket.id },
       data: {
-        status: isAdmin ? 'ANSWERED' : 'OPEN',
+        status: isStaff ? 'ANSWERED' : 'OPEN',
         updatedAt: new Date()
       }
     });
