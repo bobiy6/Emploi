@@ -27,3 +27,15 @@ export const updateSystemSetting = async (req: any, res: Response) => {
     res.status(500).json({ message: 'Error updating setting', error });
   }
 };
+
+export const testStripeConnection = async (req: any, res: Response) => {
+  const stripe = (await import('stripe')).default;
+  const { secretKey } = req.body;
+  try {
+    const stripeInstance = new stripe(secretKey);
+    await stripeInstance.paymentIntents.list({ limit: 1 });
+    res.json({ success: true, message: 'Stripe API connection successful!' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Stripe connection failed: ${error.message}` });
+  }
+};

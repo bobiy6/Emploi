@@ -40,7 +40,7 @@ const Dashboard = () => {
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard icon={Server} label="Active Services" value={services.length} color="blue" />
-        <StatCard icon={CreditCard} label="Credit Balance" value={`${profile?.balance || 0}€`} color="emerald" />
+        <StatCard icon={CreditCard} label="Credit Balance" value={`${profile?.balance?.toFixed(2) || '0.00'}€`} color="emerald" />
         <StatCard icon={ShieldCheck} label="Pending Invoices" value="0" color="rose" />
         <StatCard icon={Activity} label="System Uptime" value="99.9%" color="amber" />
       </div>

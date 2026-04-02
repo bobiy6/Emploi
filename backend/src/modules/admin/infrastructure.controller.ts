@@ -48,14 +48,25 @@ export const deleteServer = async (req: any, res: Response) => {
 
 export const testServerConnection = async (req: any, res: Response) => {
   const { id } = req.params;
+  const axios = (await import('axios')).default;
   try {
     const server = await prisma.server.findUnique({ where: { id: parseInt(id as string) } });
     if (!server) return res.status(404).json({ message: 'Server not found' });
 
-    // Simulated connection test
-    console.log(`Testing connection to ${server.name} at ${server.url}...`);
-    res.json({ success: true, message: 'Connection successful!' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Connection failed' });
+    if (server.type === 'PROXMOX') {
+        await axios.get(`${server.url}/version`, {
+            headers: { Authorization: `PVEAPIToken=${server.apiKey}=${server.secret}` },
+            timeout: 5000
+        });
+    } else {
+        await axios.get(`${server.url}/api/application/nodes`, {
+            headers: { Authorization: `Bearer ${server.apiKey}`, Accept: 'application/json' },
+            timeout: 5000
+        });
+    }
+
+    res.json({ success: true, message: 'Real connection successful!' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: `Connection failed: ${error.message}` });
   }
 };

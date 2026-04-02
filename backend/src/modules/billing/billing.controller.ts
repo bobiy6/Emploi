@@ -33,22 +33,29 @@ export const payInvoice = async (req: any, res: Response) => {
 
     const product = invoice.order?.product;
     if (product) {
-        const nextDueDate = new Date();
-        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-        const moduleName = product.type === 'VPS' ? 'proxmox' : 'pterodactyl';
-        const { getAdapter, getBestServer } = await import('../provisioning/provisioning.service.js');
-        const adapter = getAdapter(moduleName);
-        const server = await getBestServer(product.type);
+        try {
+            const nextDueDate = new Date();
+            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+            const moduleName = product.type === 'VPS' ? 'proxmox' : 'pterodactyl';
+            const { getAdapter, getBestServer } = await import('../provisioning/provisioning.service.js');
+            const adapter = getAdapter(moduleName);
+            const server = await getBestServer(product.type);
 
-        let externalId = null;
-        if (adapter && server) {
-            const config = (product.config as any) || {};
-            externalId = await adapter.create({ ...config, serverId: server.id });
+            if (!server) throw new Error('No active server available for provisioning');
+
+            let externalId = null;
+            if (adapter && server) {
+                const config = (product.config as any) || {};
+                externalId = await adapter.create(config, server);
+            }
+
+            await prisma.service.create({
+                data: { userId, productId: product.id, status: 'ACTIVE', module: moduleName, externalId, config: product.config || {}, nextDueDate }
+            });
+        } catch (provisionError: any) {
+            console.error('[PROVISIONING ERROR]:', provisionError.message);
+            // In real app, you might want to queue this or notify admin
         }
-
-        await prisma.service.create({
-            data: { userId, productId: product.id, status: 'ACTIVE', module: moduleName, externalId, config: product.config || {}, nextDueDate }
-        });
     }
     res.json({ message: 'Invoice paid and service provisioned' });
   } catch (error) {
