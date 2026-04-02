@@ -84,7 +84,7 @@ const Accounting = () => {
                  </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                 {invoices.map((inv: any) => (
+                 {invoices?.map((inv: any) => (
                     <tr key={inv.id} className="hover:bg-gray-50/50 transition-colors">
                        <td className="px-8 py-6">
                           <p className="font-mono text-xs font-bold text-gray-400">#INV-{inv.id}</p>

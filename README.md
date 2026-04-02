@@ -63,3 +63,9 @@ A modern, modular hosting management platform (WHMCS simplified) built with Node
 ## Production
 - Build frontend: `cd frontend && npm run build`
 - Build backend: `cd backend && npm run build`
+
+## Database Management
+To easily view, edit, or delete data (users, products, services) in the database:
+1. Open a terminal in the `backend` folder.
+2. Run: `npx prisma studio`
+3. This will open a web interface in your browser (usually at `http://localhost:5555`) where you can manage all your tables.

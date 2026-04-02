@@ -54,9 +54,9 @@ const Support = () => {
     }
   };
 
-  const handleViewTicket = async (ticket: any) => {
+  const handleViewTicket = async (ticketId: number) => {
     try {
-      const res = await api.get(`/support/${ticket.id}`);
+      const res = await api.get(`/support/${ticketId}`);
       setSelectedTicket(res.data);
     } catch (err) {
       console.error(err);
@@ -77,7 +77,7 @@ const Support = () => {
           </div>
 
           <Card className="flex-1 overflow-y-auto space-y-6 p-8 shadow-inner bg-gray-50/50">
-             {selectedTicket.messages.map((msg: any) => (
+             {selectedTicket.messages?.map((msg: any) => (
                 <div key={msg.id} className={`flex ${msg.isAdmin ? 'justify-start' : 'justify-end'}`}>
                    <div className={`max-w-[80%] p-5 rounded-3xl shadow-sm ${
                       msg.isAdmin
@@ -188,7 +188,7 @@ const Support = () => {
             <Card
                key={ticket.id}
                className="hover:shadow-lg transition-all duration-300 border-none group cursor-pointer p-0 overflow-hidden"
-               onClick={() => handleViewTicket(ticket)}
+               onClick={() => handleViewTicket(ticket.id)}
             >
                <div className="flex items-center p-6 gap-6">
                   <div className="p-4 bg-gray-50 rounded-2xl group-hover:bg-blue-600 transition-colors duration-300">

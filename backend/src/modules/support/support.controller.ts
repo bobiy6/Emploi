@@ -44,7 +44,10 @@ export const getTicketById = async (req: any, res: Response) => {
   try {
     const ticket = await prisma.ticket.findUnique({
       where: { id: parseInt(id as string) },
-      include: { messages: { orderBy: { createdAt: 'asc' } } }
+      include: {
+        messages: { orderBy: { createdAt: 'asc' } },
+        user: { select: { name: true, email: true } }
+      }
     });
     const isStaff = req.userRole === 'ADMIN' || req.userRole === 'SUPPORT';
     if (!ticket || (ticket.userId !== req.userId && !isStaff)) {
