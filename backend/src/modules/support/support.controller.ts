@@ -42,10 +42,16 @@ export const getMyTickets = async (req: any, res: Response) => {
 export const getTicketById = async (req: any, res: Response) => {
   const { id } = req.params;
   try {
+    const ticketId = parseInt(id as string);
+    if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid Ticket ID' });
+
     const ticket = await prisma.ticket.findUnique({
-      where: { id: parseInt(id as string) },
+      where: { id: ticketId },
       include: {
-        messages: { orderBy: { createdAt: 'asc' } },
+        messages: {
+          orderBy: { createdAt: 'asc' },
+          include: { user: { select: { name: true, role: true } } }
+        },
         user: { select: { name: true, email: true } }
       }
     });
@@ -65,11 +71,20 @@ export const replyToTicket = async (req: any, res: Response) => {
   const userId = req.userId;
 
   try {
-    const ticket = await prisma.ticket.findUnique({ where: { id: parseInt(id as string) } });
+    const ticketId = parseInt(id as string);
+    if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid Ticket ID' });
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    const isStaff = user?.role === 'ADMIN' || user?.role === 'SUPPORT';
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const isStaff = user.role === 'ADMIN' || user.role === 'SUPPORT';
+
+    // Staff can reply to any ticket, clients only to their own
+    if (!isStaff && ticket.userId !== userId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
 
     const newMessage = await prisma.ticketMessage.create({
       data: {

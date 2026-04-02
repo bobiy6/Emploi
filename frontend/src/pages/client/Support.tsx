@@ -49,6 +49,9 @@ const Support = () => {
       // Refresh ticket details
       const res = await api.get(`/support/${selectedTicket.id}`);
       setSelectedTicket(res.data);
+      // Also refresh the tickets list in background
+      const listRes = await api.get('/support');
+      setTickets(listRes.data);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error replying');
     }
