@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Settings, Shield, Link, Database, Cpu, Lock } from 'lucide-react';
+import { Settings, Shield, Link, Database, Cpu, Lock, CreditCard } from 'lucide-react';
 import api from '../../api';
 
 const ModuleSettings = () => {
