@@ -85,13 +85,13 @@ const Support = () => {
                    <div className={`max-w-[80%] p-5 rounded-3xl shadow-sm ${
                       msg.isAdmin
                         ? 'bg-white border border-gray-100 rounded-tl-none'
-                        : 'bg-blue-600 text-white rounded-tr-none'
+                        : 'bg-blue-600 text-white rounded-tr-none shadow-lg shadow-blue-100'
                    }`}>
                       <div className="flex items-center gap-2 mb-2">
-                         <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
-                            {msg.isAdmin ? 'Support Agent' : 'You'}
+                         <span className={`text-[10px] font-black uppercase tracking-widest ${msg.isAdmin ? 'text-gray-400' : 'text-blue-100'}`}>
+                            {msg.isAdmin ? (msg.user?.name || 'Support Agent') : 'You'}
                          </span>
-                         <span className="text-[10px] opacity-40 font-bold">
+                         <span className={`text-[10px] font-bold ${msg.isAdmin ? 'text-gray-300' : 'text-blue-200'}`}>
                             {new Date(msg.createdAt).toLocaleString()}
                          </span>
                       </div>

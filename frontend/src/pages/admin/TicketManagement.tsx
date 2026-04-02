@@ -60,14 +60,14 @@ const AdminTicketManagement = () => {
                   <div key={msg.id} className={`flex ${msg.isAdmin ? 'justify-end' : 'justify-start'}`}>
                      <div className={`max-w-[80%] p-5 rounded-3xl shadow-sm ${
                         msg.isAdmin
-                          ? 'bg-rose-600 text-white rounded-tr-none'
-                          : 'bg-white border border-gray-100 rounded-tl-none'
+                          ? 'bg-rose-600 text-white rounded-tr-none shadow-lg shadow-rose-100'
+                          : 'bg-white border border-gray-100 rounded-tl-none shadow-sm'
                      }`}>
                         <div className="flex items-center gap-2 mb-2">
-                           <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
-                              {msg.isAdmin ? 'You (Admin)' : 'Customer'}
+                           <span className={`text-[10px] font-black uppercase tracking-widest ${msg.isAdmin ? 'text-rose-100' : 'text-gray-400'}`}>
+                              {msg.isAdmin ? (msg.user?.name || 'Support Agent') : (msg.user?.name || 'Customer')}
                            </span>
-                           <span className="text-[10px] opacity-40 font-bold">
+                           <span className={`text-[10px] font-bold ${msg.isAdmin ? 'text-rose-200' : 'text-gray-300'}`}>
                               {new Date(msg.createdAt).toLocaleString()}
                            </span>
                         </div>
