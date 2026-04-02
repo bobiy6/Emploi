@@ -9,8 +9,10 @@ import autoTable from 'jspdf-autotable';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import AddFundsModal from '../../components/AddFundsModal';
+import { useAuth } from '../../hooks/useAuth';
 
 const Billing = () => {
+  const { user } = useAuth();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingPay, setLoadingPay] = useState<number | null>(null);
   const [showAddFunds, setShowAddFunds] = useState(false);
@@ -103,7 +105,7 @@ const Billing = () => {
                 <Wallet className="w-6 h-6" />
              </div>
              <p className="text-sm font-bold text-indigo-100 mb-1 uppercase tracking-widest">Available Credit</p>
-             <h3 className="text-4xl font-black mb-6">15.00€</h3>
+             <h3 className="text-4xl font-black mb-6">{user?.balance?.toFixed(2) || '0.00'}€</h3>
              <Button
                 variant="secondary"
                 className="w-full bg-white text-indigo-700 border-none h-12 font-bold group-hover:scale-105 transition-transform"

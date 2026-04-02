@@ -21,6 +21,7 @@ import ModuleSettings from './pages/admin/ModuleSettings';
 import Accounting from './pages/admin/Accounting';
 import Infrastructure from './pages/admin/Infrastructure';
 import LogViewer from './pages/admin/LogViewer';
+import DatabaseManager from './pages/admin/DatabaseManager';
 import { AdminGuard } from './components/AdminGuard';
 
 const App = () => {
@@ -50,6 +51,7 @@ const App = () => {
           <Route path="/admin/accounting" element={<AdminGuard><AdminLayout><Accounting /></AdminLayout></AdminGuard>} />
           <Route path="/admin/infrastructure" element={<AdminGuard><AdminLayout><Infrastructure /></AdminLayout></AdminGuard>} />
           <Route path="/admin/logs" element={<AdminGuard><AdminLayout><LogViewer /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/db" element={<AdminGuard><AdminLayout><DatabaseManager /></AdminLayout></AdminGuard>} />
           <Route path="/admin/settings" element={<AdminGuard><AdminLayout><ModuleSettings /></AdminLayout></AdminGuard>} />
 
           {/* Redirects */}
