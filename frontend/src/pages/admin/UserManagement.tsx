@@ -30,7 +30,15 @@ const UserManagement = () => {
 
   const handleImpersonate = async (userId: number) => {
     try {
+      const currentToken = localStorage.getItem('token');
       const res = await api.post(`/users/${userId}/impersonate`);
+
+      // Store current admin token and name to allow returning
+      if (currentToken) {
+        sessionStorage.setItem('adminToken', currentToken);
+        sessionStorage.setItem('adminName', res.data.adminName || 'Admin');
+      }
+
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
       window.location.reload();

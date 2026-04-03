@@ -83,8 +83,19 @@ export const impersonateUser = async (req: any, res: Response) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: parseInt(id as string) } });
     if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Original admin info to allow "return"
+    const adminId = req.userId;
+    const adminUser = await prisma.user.findUnique({ where: { id: adminId } });
+
     const token = generateToken(user.id, user.role);
-    res.json({ message: 'Impersonation successful', token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+    res.json({
+      message: 'Impersonation successful',
+      token,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      adminToken: req.headers.authorization?.split(' ')[1], // Current admin token
+      adminName: adminUser?.name
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error during impersonation', error });
   }

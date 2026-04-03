@@ -1,9 +1,17 @@
 import { Response } from 'express';
 import prisma from '../../config/prisma.js';
+import { createLog } from '../../utils/logger.js';
 
+/**
+ * Client: Create a new ticket
+ */
 export const createTicket = async (req: any, res: Response) => {
   const { subject, message } = req.body;
   const userId = req.userId;
+
+  if (!subject || !message) {
+    return res.status(400).json({ message: 'Subject and message are required' });
+  }
 
   try {
     const ticket = await prisma.ticket.create({
@@ -19,31 +27,47 @@ export const createTicket = async (req: any, res: Response) => {
           }
         }
       },
-      include: { messages: true }
+      include: {
+        messages: { orderBy: { createdAt: 'asc' } },
+        user: { select: { name: true, email: true } }
+      }
     });
+
+    await createLog({ type: 'SERVICE', level: 'INFO', message: `New ticket created: ${subject}`, userId });
     res.status(201).json(ticket);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating ticket', error });
+  } catch (error: any) {
+    console.error('TICKET CREATE ERROR:', error);
+    res.status(500).json({ message: 'Error creating ticket', error: error.message });
   }
 };
 
+/**
+ * Client: Get own tickets
+ */
 export const getMyTickets = async (req: any, res: Response) => {
   try {
     const tickets = await prisma.ticket.findMany({
       where: { userId: req.userId },
-      orderBy: { updatedAt: 'desc' }
+      orderBy: { updatedAt: 'desc' },
+      include: { user: { select: { name: true } } }
     });
     res.json(tickets);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching tickets', error });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching tickets', error: error.message });
   }
 };
 
+/**
+ * Admin/Client: Get single ticket by ID
+ */
 export const getTicketById = async (req: any, res: Response) => {
   const { id } = req.params;
+  const userId = req.userId;
+  const isStaff = req.userRole === 'ADMIN' || req.userRole === 'SUPPORT';
+
   try {
-    const ticketId = parseInt(id as string);
-    if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid Ticket ID' });
+    const ticketId = parseInt(id);
+    if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid ID' });
 
     const ticket = await prisma.ticket.findUnique({
       where: { id: ticketId },
@@ -52,36 +76,41 @@ export const getTicketById = async (req: any, res: Response) => {
           orderBy: { createdAt: 'asc' },
           include: { user: { select: { name: true, role: true } } }
         },
-        user: { select: { name: true, email: true } }
+        user: { select: { name: true, email: true, role: true } }
       }
     });
-    const isStaff = req.userRole === 'ADMIN' || req.userRole === 'SUPPORT';
-    if (!ticket || (ticket.userId !== req.userId && !isStaff)) {
-      return res.status(404).json({ message: 'Ticket not found' });
+
+    if (!ticket || (ticket.userId !== userId && !isStaff)) {
+      return res.status(404).json({ message: 'Ticket not found or access denied' });
     }
+
     res.json(ticket);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching ticket', error });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching ticket details', error: error.message });
   }
 };
 
+/**
+ * Admin/Client: Reply to a ticket
+ */
 export const replyToTicket = async (req: any, res: Response) => {
   const { id } = req.params;
   const { message } = req.body;
   const userId = req.userId;
+  const isStaff = req.userRole === 'ADMIN' || req.userRole === 'SUPPORT';
+
+  if (!message || message.trim() === '') {
+    return res.status(400).json({ message: 'Message is required' });
+  }
 
   try {
-    const ticketId = parseInt(id as string);
-    if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid Ticket ID' });
+    const ticketId = parseInt(id);
+    if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid ID' });
 
     const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    const isStaff = user.role === 'ADMIN' || user.role === 'SUPPORT';
-
-    // Staff can reply to any ticket, clients only to their own
+    // Client can only reply to their own tickets
     if (!isStaff && ticket.userId !== userId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
@@ -92,7 +121,8 @@ export const replyToTicket = async (req: any, res: Response) => {
         userId,
         message,
         isAdmin: isStaff
-      }
+      },
+      include: { user: { select: { name: true, role: true } } }
     });
 
     await prisma.ticket.update({
@@ -104,11 +134,14 @@ export const replyToTicket = async (req: any, res: Response) => {
     });
 
     res.status(201).json(newMessage);
-  } catch (error) {
-    res.status(500).json({ message: 'Error replying to ticket', error });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error sending reply', error: error.message });
   }
 };
 
+/**
+ * Admin: Get all tickets
+ */
 export const getAllTicketsAdmin = async (req: any, res: Response) => {
   try {
     const tickets = await prisma.ticket.findMany({
@@ -116,7 +149,7 @@ export const getAllTicketsAdmin = async (req: any, res: Response) => {
       orderBy: { updatedAt: 'desc' }
     });
     res.json(tickets);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching all tickets', error });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching all tickets', error: error.message });
   }
 };
