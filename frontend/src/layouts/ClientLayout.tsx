@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Server, CreditCard, LifeBuoy, ShoppingCart, LogOut, Settings, User } from 'lucide-react';
+import { LayoutDashboard, Server, CreditCard, LifeBuoy, ShoppingCart, LogOut, Settings, User, LogIn } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../hooks/useAuth';
 
@@ -26,8 +26,23 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
 
   const handleLogout = () => {
     logout();
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminName');
     navigate('/login');
   };
+
+  const handleReturnToAdmin = () => {
+    const adminToken = sessionStorage.getItem('adminToken');
+    if (adminToken) {
+      localStorage.setItem('token', adminToken);
+      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminName');
+      navigate('/admin');
+      window.location.reload();
+    }
+  };
+
+  const adminName = sessionStorage.getItem('adminName');
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
@@ -74,6 +89,19 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main Content */}
       <main className="flex-1 ml-72">
+        {adminName && (
+           <div className="bg-rose-600 text-white px-10 py-2 text-sm font-black flex items-center justify-between shadow-lg sticky top-0 z-50 animate-pulse">
+              <div className="flex items-center gap-2 uppercase tracking-widest">
+                 <User className="w-4 h-4" /> Logged in as {user?.name} (Impersonation Mode)
+              </div>
+              <button
+                onClick={handleReturnToAdmin}
+                className="bg-white text-rose-600 px-4 py-1 rounded-lg flex items-center gap-2 hover:bg-rose-50 transition-all"
+              >
+                <LogIn className="w-4 h-4" /> Return to {adminName}
+              </button>
+           </div>
+        )}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 px-10 flex items-center justify-between sticky top-0 z-20">
           <h2 className="text-xl font-bold text-gray-800">
              {menuItems.find(m => m.to === location.pathname)?.label || 'Overview'}
