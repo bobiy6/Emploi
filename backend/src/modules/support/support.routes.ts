@@ -9,5 +9,7 @@ router.get('/all', authMiddleware, adminMiddleware, getAllTicketsAdmin);
 router.get('/:id', authMiddleware, getTicketById);
 router.post('/', authMiddleware, createTicket);
 router.post('/:id/reply', authMiddleware, replyToTicket);
+router.post('/:id/close', authMiddleware, closeTicket);
+router.delete('/:id', authMiddleware, adminMiddleware, deleteTicket);
 
 export default router;

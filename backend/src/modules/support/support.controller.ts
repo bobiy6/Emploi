@@ -140,6 +140,59 @@ export const replyToTicket = async (req: any, res: Response) => {
 };
 
 /**
+ * Admin/Client: Close a ticket
+ */
+export const closeTicket = async (req: any, res: Response) => {
+  const { id } = req.params;
+  const userId = req.userId;
+  const isStaff = req.userRole === 'ADMIN' || req.userRole === 'SUPPORT';
+
+  try {
+    const ticketId = parseInt(id);
+    if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid ID' });
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+    if (!isStaff && ticket.userId !== userId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticketId },
+      data: { status: 'CLOSED' }
+    });
+
+    res.json(updatedTicket);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error closing ticket', error: error.message });
+  }
+};
+
+/**
+ * Admin: Delete a ticket
+ */
+export const deleteTicket = async (req: any, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const ticketId = parseInt(id);
+    if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid ID' });
+
+    // Delete related messages first (manual cascade to be safe)
+    await prisma.ticketMessage.deleteMany({ where: { ticketId } });
+
+    await prisma.ticket.delete({
+      where: { id: ticketId }
+    });
+
+    res.json({ message: 'Ticket deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error deleting ticket', error: error.message });
+  }
+};
+
+/**
  * Admin: Get all tickets
  */
 export const getAllTicketsAdmin = async (req: any, res: Response) => {
