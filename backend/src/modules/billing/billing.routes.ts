@@ -8,6 +8,13 @@ router.get('/', authMiddleware, getMyInvoices);
 router.get('/all', authMiddleware, adminMiddleware, getAllInvoices);
 router.get('/:id/download', authMiddleware, downloadInvoicePDF);
 router.post('/:id/pay', authMiddleware, payInvoice);
+router.get('/config', authMiddleware, async (req: any, res: any) => {
+    const prisma = (await import('../../config/prisma.js')).default;
+    const settings = await prisma.systemSetting.findUnique({ where: { key: 'stripe' } });
+    const config = settings?.value as any;
+    res.json({ publicKey: config?.publicKey });
+});
+
 router.post('/create-payment-intent', authMiddleware, async (req: any, res: any) => {
     const { amount } = req.body;
     const stripe = (await import('stripe')).default;
