@@ -11,6 +11,7 @@ const Infrastructure = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: '', type: 'PROXMOX', url: '', apiKey: '', secret: '', node: '' });
   const [testingId, setTestingId] = useState<number | null>(null);
+  const [isRawTesting, setIsRawTesting] = useState(false);
 
   useEffect(() => {
     fetchServers();
@@ -48,6 +49,19 @@ const Infrastructure = () => {
     } finally {
       setTestingId(null);
     }
+  };
+
+  const handleRawTest = async () => {
+     if(!form.url || !form.apiKey) return alert('Fill URL and API Key first');
+     setIsRawTesting(true);
+     try {
+        const res = await api.post('/admin/infrastructure/test-raw', form);
+        alert(res.data.message);
+     } catch (err: any) {
+        alert('Connection failed: ' + (err.response?.data?.message || err.message));
+     } finally {
+        setIsRawTesting(false);
+     }
   };
 
   const toggleActive = async (server: any) => {
@@ -95,9 +109,12 @@ const Infrastructure = () => {
                <Input label="API Secret" type="password" placeholder="Key secret" value={form.secret} onChange={e => setForm({...form, secret: e.target.value})} />
                <Input label="Default Node / Location" placeholder="pve1 or local" value={form.node} onChange={e => setForm({...form, node: e.target.value})} />
 
-               <div className="md:col-span-2 flex justify-end gap-3 pt-4 border-t border-gray-100">
-                  <Button variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
-                  <Button type="submit">Add Server</Button>
+               <div className="md:col-span-2 flex justify-between items-center pt-4 border-t border-gray-100">
+                  <Button type="button" variant="secondary" onClick={handleRawTest} isLoading={isRawTesting}>Test Configuration</Button>
+                  <div className="flex gap-3">
+                     <Button variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
+                     <Button type="submit">Add Server</Button>
+                  </div>
                </div>
             </form>
          </Card>
