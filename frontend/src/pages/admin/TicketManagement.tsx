@@ -195,7 +195,8 @@ const AdminTicketManagement = () => {
                   </div>
                </div>
             </Card>
-          ))}
+          ))
+        )}
       </div>
     </div>
   );
