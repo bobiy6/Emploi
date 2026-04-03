@@ -1,5 +1,5 @@
 import express from 'express';
-import { createTicket, getMyTickets, getTicketById, replyToTicket, getAllTicketsAdmin } from './support.controller.js';
+import { createTicket, getMyTickets, getTicketById, replyToTicket, getAllTicketsAdmin, closeTicket, deleteTicket } from './support.controller.js';
 import { authMiddleware, adminMiddleware } from '../../middleware/auth.js';
 
 const router = express.Router();
