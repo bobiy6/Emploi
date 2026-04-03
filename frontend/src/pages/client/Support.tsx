@@ -203,10 +203,10 @@ const Support = () => {
           tickets.map((ticket) => (
             <Card
                key={ticket.id}
-               className="hover:shadow-xl transition-all duration-300 border-none group cursor-pointer p-0 overflow-hidden"
+               className="hover:shadow-xl transition-all duration-300 border-none group p-0 overflow-hidden"
                onClick={() => handleView(ticket.id)}
             >
-               <div className="flex items-center p-6 gap-6">
+               <div className="flex items-center p-6 gap-6 pointer-events-none">
                   <div className="p-4 bg-gray-50 rounded-2xl group-hover:bg-blue-600 transition-colors duration-300">
                      <MessageSquare className="w-6 h-6 text-gray-400 group-hover:text-white" />
                   </div>
