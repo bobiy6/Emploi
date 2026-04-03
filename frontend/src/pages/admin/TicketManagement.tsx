@@ -169,8 +169,8 @@ const AdminTicketManagement = () => {
           </Card>
         ) : (
           tickets.map(ticket => (
-            <Card key={ticket.id} className="hover:shadow-xl transition-all cursor-pointer p-0 overflow-hidden group" onClick={() => handleView(ticket.id)}>
-               <div className="flex items-center p-6 gap-6">
+            <Card key={ticket.id} className="hover:shadow-xl transition-all p-0 overflow-hidden group" onClick={() => handleView(ticket.id)}>
+               <div className="flex items-center p-6 gap-6 pointer-events-none">
                   <div className={`p-4 rounded-2xl transition-colors duration-300 ${ticket.status === 'OPEN' ? 'bg-rose-50 text-rose-600 group-hover:bg-rose-600 group-hover:text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-gray-600 group-hover:text-white'}`}>
                      <MessageSquare className="w-6 h-6" />
                   </div>
