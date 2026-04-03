@@ -20,9 +20,13 @@ const Billing = () => {
 
   useEffect(() => {
      const initStripe = async () => {
-        const { data } = await api.get('/admin/settings');
-        if (data.stripe?.publicKey) {
-           setStripePromise(loadStripe(data.stripe.publicKey));
+        try {
+          const { data } = await api.get('/billing/config');
+          if (data.publicKey) {
+             setStripePromise(loadStripe(data.publicKey));
+          }
+        } catch (err) {
+          console.error('Failed to load Stripe config', err);
         }
      };
      initStripe();

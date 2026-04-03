@@ -32,7 +32,7 @@ export const payInvoice = async (req: any, res: Response) => {
       prisma.order.update({ where: { id: invoice.orderId! }, data: { status: 'PAID' } })
     ]);
 
-    createLog({ type: 'SERVICE', level: 'INFO', message: `Invoice paid: #INV-${invoice.id}`, userId, details: { amount: invoice.amount } });
+    await createLog({ type: 'SERVICE', level: 'INFO', message: `Invoice paid: #INV-${invoice.id}`, userId, details: { amount: invoice.amount } });
 
     const product = invoice.order?.product;
     if (product) {
@@ -111,6 +111,12 @@ export const downloadInvoicePDF = async (req: any, res: Response) => {
     });
 
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+    // Check permission: Owner or Staff
+    const isStaff = req.userRole === 'ADMIN' || req.userRole === 'SUPPORT';
+    if (invoice.userId !== req.userId && !isStaff) {
+       return res.status(403).json({ message: 'Forbidden: You do not own this invoice' });
+    }
 
     // Mock PDF Generation
     const pdfContent = `

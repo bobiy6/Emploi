@@ -23,6 +23,7 @@ import Infrastructure from './pages/admin/Infrastructure';
 import LogViewer from './pages/admin/LogViewer';
 import DatabaseManager from './pages/admin/DatabaseManager';
 import { AdminGuard } from './components/AdminGuard';
+import { AuthGuard } from './components/AuthGuard';
 
 const App = () => {
   return (
@@ -33,12 +34,12 @@ const App = () => {
           <Route path="/register" element={<Register />} />
 
           {/* Protected Routes */}
-          <Route path="/dashboard" element={<ClientLayout><Dashboard /></ClientLayout>} />
-          <Route path="/services" element={<ClientLayout><Services /></ClientLayout>} />
-          <Route path="/store" element={<ClientLayout><Store /></ClientLayout>} />
-          <Route path="/billing" element={<ClientLayout><Billing /></ClientLayout>} />
-          <Route path="/support" element={<ClientLayout><Support /></ClientLayout>} />
-        <Route path="/settings" element={<ClientLayout><Settings /></ClientLayout>} />
+          <Route path="/dashboard" element={<AuthGuard><ClientLayout><Dashboard /></ClientLayout></AuthGuard>} />
+          <Route path="/services" element={<AuthGuard><ClientLayout><Services /></ClientLayout></AuthGuard>} />
+          <Route path="/store" element={<AuthGuard><ClientLayout><Store /></ClientLayout></AuthGuard>} />
+          <Route path="/billing" element={<AuthGuard><ClientLayout><Billing /></ClientLayout></AuthGuard>} />
+          <Route path="/support" element={<AuthGuard><ClientLayout><Support /></ClientLayout></AuthGuard>} />
+          <Route path="/settings" element={<AuthGuard><ClientLayout><Settings /></ClientLayout></AuthGuard>} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminGuard><AdminLayout><AdminDashboard /></AdminLayout></AdminGuard>} />
