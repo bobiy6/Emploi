@@ -1,8 +1,11 @@
 import { ProvisioningAdapter } from '../provisioning.interface.js';
 import axios from 'axios';
+import https from 'https';
 import { createLog } from '../../../utils/logger.js';
 
 export class ProxmoxAdapter implements ProvisioningAdapter {
+  private agent = new https.Agent({ rejectUnauthorized: false });
+
   private async getAuthHeader(server: any) {
     return {
       Authorization: `PVEAPIToken=${server.apiKey}=${server.secret}`
@@ -11,7 +14,10 @@ export class ProxmoxAdapter implements ProvisioningAdapter {
 
   async create(config: any, server: any): Promise<string> {
     const node = server.node || 'pve';
-    const nextIdRes = await axios.get(`${server.url}/cluster/nextid`, { headers: await this.getAuthHeader(server) });
+    const nextIdRes = await axios.get(`${server.url}/cluster/nextid`, {
+      headers: await this.getAuthHeader(server),
+      httpsAgent: this.agent
+    });
     const vmid = nextIdRes.data.data;
 
     const requestData = {
@@ -25,7 +31,10 @@ export class ProxmoxAdapter implements ProvisioningAdapter {
     };
 
     try {
-        await axios.post(`${server.url}/nodes/${node}/qemu`, requestData, { headers: await this.getAuthHeader(server) });
+        await axios.post(`${server.url}/nodes/${node}/qemu`, requestData, {
+          headers: await this.getAuthHeader(server),
+          httpsAgent: this.agent
+        });
         createLog({ type: 'PROVISIONING', level: 'INFO', message: `Proxmox VM created: ${vmid}`, details: { request: requestData } });
         return vmid.toString();
     } catch (err: any) {
@@ -36,20 +45,29 @@ export class ProxmoxAdapter implements ProvisioningAdapter {
 
   async suspend(externalId: string, server: any): Promise<boolean> {
     const node = server.node || 'pve';
-    await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/suspend`, {}, { headers: await this.getAuthHeader(server) });
+    await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/suspend`, {}, {
+      headers: await this.getAuthHeader(server),
+      httpsAgent: this.agent
+    });
     return true;
   }
 
   async terminate(externalId: string, server: any): Promise<boolean> {
     const node = server.node || 'pve';
-    await axios.delete(`${server.url}/nodes/${node}/qemu/${externalId}`, { headers: await this.getAuthHeader(server) });
+    await axios.delete(`${server.url}/nodes/${node}/qemu/${externalId}`, {
+      headers: await this.getAuthHeader(server),
+      httpsAgent: this.agent
+    });
     return true;
   }
 
   async powerAction(externalId: string, action: string, server: any): Promise<boolean> {
     const node = server.node || 'pve';
     const pxAction = action === 'stop' ? 'stop' : action === 'start' ? 'start' : 'reboot';
-    await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/${pxAction}`, {}, { headers: await this.getAuthHeader(server) });
+    await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/${pxAction}`, {}, {
+      headers: await this.getAuthHeader(server),
+      httpsAgent: this.agent
+    });
     return true;
   }
 }
