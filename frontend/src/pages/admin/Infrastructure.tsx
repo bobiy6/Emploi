@@ -96,18 +96,31 @@ const Infrastructure = () => {
          <Card className="p-8 border-2 border-blue-100 bg-blue-50/20 shadow-xl overflow-hidden">
             <h3 className="text-xl font-bold mb-6">New Backend Server</h3>
             <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <Input label="Display Name" placeholder="e.g. Dedicated-01" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+               <Input label="Display Name" placeholder={form.type === 'PROXMOX' ? "e.g. Proxmox-Node-01" : "e.g. Game-Panel-Main"} value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
                <div className="space-y-1">
                   <label className="text-sm font-medium ml-1">Server Type</label>
-                  <select className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                     <option value="PROXMOX">Proxmox VE</option>
-                     <option value="PTERODACTYL">Pterodactyl Panel</option>
+                  <select className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white font-bold" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
+                     <option value="PROXMOX">Proxmox VE (VPS)</option>
+                     <option value="PTERODACTYL">Pterodactyl (Games)</option>
                   </select>
                </div>
-               <Input label="API URL" placeholder="https://..." value={form.url} onChange={e => setForm({...form, url: e.target.value})} required />
-               <Input label="API Key / Token ID" placeholder="User token or key" value={form.apiKey} onChange={e => setForm({...form, apiKey: e.target.value})} required />
-               <Input label="API Secret" type="password" placeholder="Key secret" value={form.secret} onChange={e => setForm({...form, secret: e.target.value})} />
-               <Input label="Default Node / Location" placeholder="pve1 or local" value={form.node} onChange={e => setForm({...form, node: e.target.value})} />
+
+               <Input label="API URL" placeholder={form.type === 'PROXMOX' ? "https://ip:8006/api2/json" : "https://panel.example.com"} value={form.url} onChange={e => setForm({...form, url: e.target.value})} required />
+
+               <Input
+                 label={form.type === 'PROXMOX' ? "API Token ID" : "Application API Key"}
+                 placeholder={form.type === 'PROXMOX' ? "root@pam!hostdash" : "ptla_xxxxxxxx"}
+                 value={form.apiKey}
+                 onChange={e => setForm({...form, apiKey: e.target.value})}
+                 required
+               />
+
+               {form.type === 'PROXMOX' && (
+                  <>
+                     <Input label="API Secret" type="password" placeholder="xxxxxxxx-xxxx-..." value={form.secret} onChange={e => setForm({...form, secret: e.target.value})} required />
+                     <Input label="Default Node (ID)" placeholder="e.g. pve" value={form.node} onChange={e => setForm({...form, node: e.target.value})} required />
+                  </>
+               )}
 
                <div className="md:col-span-2 flex justify-between items-center pt-4 border-t border-gray-100">
                   <Button type="button" variant="secondary" onClick={handleRawTest} isLoading={isRawTesting}>Test Configuration</Button>
