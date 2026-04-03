@@ -20,7 +20,24 @@ A modern, modular hosting management platform (WHMCS simplified) built with Node
 
 ### Provisioning System
 - Modular adapter architecture.
-- Included simulations for **Proxmox** (VPS) and **Pterodactyl** (Game Servers).
+- **Proxmox VE Integration**: Automates VPS creation, suspension, and power management.
+- **Pterodactyl Integration**: Automates Game server deployment.
+
+### Proxmox Setup Guide
+To connect a Proxmox node in the Admin Infrastructure panel:
+1.  **In Proxmox**:
+    - Go to **Datacenter > Permissions > API Tokens**.
+    - Click **Add**. Select a user (e.g., `root@pam`) and give it a Token ID (e.g., `hostdash`).
+    - **IMPORTANT**: Uncheck "Privilege Separation" unless you know how to configure fine-grained ACLs.
+    - Copy the **Token ID** (e.g., `root@pam!hostdash`) and the **Secret**.
+2.  **In HostDash Admin**:
+    - Go to `/admin/infrastructure`.
+    - Click **Add Physical Server**.
+    - **API URL**: `https://YOUR_PROXMOX_IP:8006/api2/json`
+    - **API Key / Token ID**: The Token ID from step 1.
+    - **API Secret**: The Secret from step 1.
+    - **Default Node**: The name of your Proxmox node (e.g., `pve`).
+3.  **Test**: Click "Test Connect" to verify.
 
 ## Tech Stack
 - **Backend**: Node.js, Express, TypeScript, Prisma (ORM), JWT.
