@@ -90,3 +90,41 @@ const performTest = async (type: string, url: string, apiKey: string, secret?: s
     }
     return { success: true, message: 'Real connection successful!' };
 }
+
+export const getPterodactylMetadata = async (req: any, res: Response) => {
+    const { id } = req.params;
+    const axios = (await import('axios')).default;
+    const https = await import('https');
+    const agent = new https.Agent({ rejectUnauthorized: false });
+
+    try {
+        const server = await prisma.server.findUnique({ where: { id: parseInt(id) } });
+        if (!server || server.type !== 'PTERODACTYL') return res.status(404).json({ message: 'Pterodactyl server not found' });
+
+        const headers = { Authorization: `Bearer ${server.apiKey}`, Accept: 'application/json' };
+
+        const [nestsRes, locationsRes, nodesRes] = await Promise.all([
+            axios.get(`${server.url}/api/application/nests`, { headers, httpsAgent: agent }),
+            axios.get(`${server.url}/api/application/locations`, { headers, httpsAgent: agent }),
+            axios.get(`${server.url}/api/application/nodes`, { headers, httpsAgent: agent })
+        ]);
+
+        // Fetch eggs for each nest
+        const nests = nestsRes.data.data;
+        const nestsWithEggs = await Promise.all(nests.map(async (nest: any) => {
+            const eggsRes = await axios.get(`${server.url}/api/application/nests/${nest.attributes.id}/eggs?include=variables`, { headers, httpsAgent: agent });
+            return {
+                ...nest.attributes,
+                eggs: eggsRes.data.data.map((e: any) => e.attributes)
+            };
+        }));
+
+        res.json({
+            nests: nestsWithEggs,
+            locations: locationsRes.data.data.map((l: any) => l.attributes),
+            nodes: nodesRes.data.data.map((n: any) => n.attributes)
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error fetching Pterodactyl metadata', error: error.message });
+    }
+};

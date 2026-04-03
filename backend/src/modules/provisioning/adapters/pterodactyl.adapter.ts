@@ -15,28 +15,39 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   }
 
   async create(config: any, server: any): Promise<string> {
-    const requestData = {
+    const requestData: any = {
       name: config.name || 'Game Server',
-      user: config.pterodactyl_user_id || 1,
-      egg: config.egg_id || 1,
-      docker_image: config.docker_image || 'quay.io/pterodactyl/core:java',
-      startup: config.startup || 'java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}',
+      user: parseInt(config.pterodactyl_user_id) || 1,
+      egg: parseInt(config.egg_id),
+      docker_image: config.docker_image,
+      startup: config.startup,
+      environment: config.environment || {},
       limits: {
-        memory: parseInt(config.ram) || 1024,
-        swap: 0,
+        memory: parseInt(config.memory) || 1024,
+        swap: parseInt(config.swap) || 0,
         disk: parseInt(config.disk) || 5120,
-        io: 500,
-        cpu: config.cpu_limit || 100
+        io: parseInt(config.io) || 500,
+        cpu: parseInt(config.cpu) || 100
       },
       feature_limits: {
-        databases: 0,
-        allocations: 1,
-        backups: 0
-      },
-      allocation: {
-        default: config.allocation_id || 1
+        databases: parseInt(config.databases) || 0,
+        allocations: parseInt(config.allocations) || 1,
+        backups: parseInt(config.backups) || 0
       }
     };
+
+    // Deployment logic
+    if (config.deploy_mode === 'location') {
+        requestData.deploy = {
+            locations: [parseInt(config.location_id)],
+            dedicated_ip: false,
+            port_range: []
+        };
+    } else {
+        requestData.allocation = {
+            default: parseInt(config.allocation_id)
+        };
+    }
 
     try {
         const res = await axios.post(`${server.url}/api/application/servers`, requestData, {
