@@ -3,7 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { ShoppingBag, FolderTree, Plus, Edit, Trash2, Package, Layers } from 'lucide-react';
+import { ShoppingBag, FolderTree, Plus, Edit, Trash2, Package, Layers, Settings, Database, Activity, HardDrive } from 'lucide-react';
 import api from '../../api';
 
 const ProductCatalog = () => {
@@ -16,21 +16,59 @@ const ProductCatalog = () => {
   const [type, setType] = useState('VPS');
   const [categoryId, setCategoryId] = useState('');
 
+  // Game specific state
+  const [pveServers, setPveServers] = useState<any[]>([]);
+  const [selectedPveServer, setSelectedPveServer] = useState('');
+  const [metadata, setMetadata] = useState<any>(null);
+  const [selectedNest, setSelectedNest] = useState<any>(null);
+  const [selectedEgg, setSelectedEgg] = useState<any>(null);
+  const [gameConfig, setGameConfig] = useState<any>({
+    memory: 1024,
+    cpu: 100,
+    disk: 5120,
+    swap: 0,
+    io: 500,
+    databases: 0,
+    backups: 0,
+    allocations: 1,
+    deploy_mode: 'location',
+    location_id: '',
+    node_id: '',
+    allocation_id: '',
+    environment: {}
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [prodRes, catRes] = await Promise.all([
+        const [prodRes, catRes, infraRes] = await Promise.all([
           api.get('/products'),
-          api.get('/categories')
+          api.get('/categories'),
+          api.get('/admin/infrastructure')
         ]);
         setProducts(prodRes.data);
         setCategories(catRes.data);
+        setPveServers(infraRes.data.filter((s: any) => s.type === 'PTERODACTYL'));
       } catch (err) {
         console.error(err);
       }
     };
     fetchData();
   }, []);
+
+  const fetchMetadata = async (serverId: string) => {
+    if(!serverId) return;
+    try {
+      const res = await api.get(`/admin/infrastructure/${serverId}/pterodactyl-metadata`);
+      setMetadata(res.data);
+    } catch (err) {
+      alert('Failed to fetch Pterodactyl metadata');
+    }
+  };
+
+  useEffect(() => {
+    if (selectedPveServer) fetchMetadata(selectedPveServer);
+  }, [selectedPveServer]);
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +77,16 @@ const ProductCatalog = () => {
       price: parseFloat(price),
       type,
       categoryId: parseInt(categoryId),
-      config: type === 'VPS' ? { cpu: 2, ram: '4GB', disk: '40GB' } : { slots: 32 }
+      config: type === 'VPS'
+        ? { cpu: 2, ram: '4GB', disk: '40GB' }
+        : {
+            ...gameConfig,
+            serverId: selectedPveServer,
+            nest_id: selectedNest?.id,
+            egg_id: selectedEgg?.id,
+            docker_image: selectedEgg?.docker_image,
+            startup: selectedEgg?.startup
+          }
     };
 
     try {
@@ -119,7 +166,156 @@ const ProductCatalog = () => {
                   </select>
                </div>
 
-               <div className="md:col-span-2 flex justify-end gap-3 pt-4 border-t border-gray-50">
+               {type === 'GAME' && (
+                  <div className="md:col-span-2 space-y-8 mt-4 pt-8 border-t-2 border-gray-100">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-1">
+                           <label className="block text-sm font-black text-gray-400 uppercase tracking-widest ml-1">Pterodactyl Node</label>
+                           <select
+                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
+                              value={selectedPveServer}
+                              onChange={(e) => setSelectedPveServer(e.target.value)}
+                              required
+                           >
+                              <option value="">Select Panel Server</option>
+                              {pveServers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                           </select>
+                        </div>
+
+                        <div className="space-y-1">
+                           <label className="block text-sm font-black text-gray-400 uppercase tracking-widest ml-1">Nest</label>
+                           <select
+                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
+                              onChange={(e) => {
+                                 const nest = metadata?.nests.find((n:any) => n.id === parseInt(e.target.value));
+                                 setSelectedNest(nest);
+                                 setSelectedEgg(null);
+                              }}
+                              required
+                           >
+                              <option value="">Select Nest</option>
+                              {metadata?.nests.map((n:any) => <option key={n.id} value={n.id}>{n.name}</option>)}
+                           </select>
+                        </div>
+
+                        <div className="space-y-1">
+                           <label className="block text-sm font-black text-gray-400 uppercase tracking-widest ml-1">Egg</label>
+                           <select
+                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
+                              onChange={(e) => {
+                                 const egg = selectedNest?.eggs.find((eg:any) => eg.id === parseInt(e.target.value));
+                                 setSelectedEgg(egg);
+                                 const env: any = {};
+                                 egg?.relationships?.variables?.data.forEach((v: any) => {
+                                    env[v.attributes.env_variable] = v.attributes.default_value;
+                                 });
+                                 setGameConfig({...gameConfig, environment: env});
+                              }}
+                              required
+                           >
+                              <option value="">Select Egg</option>
+                              {selectedNest?.eggs.map((e:any) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                           </select>
+                        </div>
+                     </div>
+
+                     {selectedEgg && (
+                        <>
+                           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                              <Input label="Memory (MB)" type="number" value={gameConfig.memory} onChange={e => setGameConfig({...gameConfig, memory: e.target.value})} />
+                              <Input label="CPU (%)" type="number" value={gameConfig.cpu} onChange={e => setGameConfig({...gameConfig, cpu: e.target.value})} />
+                              <Input label="Disk (MB)" type="number" value={gameConfig.disk} onChange={e => setGameConfig({...gameConfig, disk: e.target.value})} />
+                              <Input label="Swap (MB)" type="number" value={gameConfig.swap} onChange={e => setGameConfig({...gameConfig, swap: e.target.value})} />
+                           </div>
+
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <Input label="Databases" type="number" value={gameConfig.databases} onChange={e => setGameConfig({...gameConfig, databases: e.target.value})} />
+                              <Input label="Backups" type="number" value={gameConfig.backups} onChange={e => setGameConfig({...gameConfig, backups: e.target.value})} />
+                              <Input label="Allocations" type="number" value={gameConfig.allocations} onChange={e => setGameConfig({...gameConfig, allocations: e.target.value})} />
+                           </div>
+
+                           <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
+                              <h4 className="font-bold text-gray-900 flex items-center gap-2"><Settings className="w-4 h-4" /> Startup Configuration</h4>
+                              <p className="text-xs text-gray-500 font-mono bg-white p-3 rounded-lg border border-gray-200">{selectedEgg.startup}</p>
+                              <p className="text-xs text-gray-400 italic">Docker Image: {selectedEgg.docker_image}</p>
+                           </div>
+
+                           <div className="space-y-4">
+                              <h4 className="font-bold text-gray-900 flex items-center gap-2"><Database className="w-4 h-4" /> Environment Variables</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 {selectedEgg.relationships?.variables?.data.map((v: any) => (
+                                    <Input
+                                       key={v.attributes.id}
+                                       label={v.attributes.name}
+                                       placeholder={v.attributes.default_value}
+                                       value={gameConfig.environment[v.attributes.env_variable] || ''}
+                                       onChange={e => setGameConfig({
+                                          ...gameConfig,
+                                          environment: { ...gameConfig.environment, [v.attributes.env_variable]: e.target.value }
+                                       })}
+                                    />
+                                 ))}
+                              </div>
+                           </div>
+
+                           <div className="space-y-4">
+                              <h4 className="font-bold text-gray-900 flex items-center gap-2"><Activity className="w-4 h-4" /> Deployment Settings</h4>
+                              <div className="flex gap-4">
+                                 <button
+                                    type="button"
+                                    onClick={() => setGameConfig({...gameConfig, deploy_mode: 'location'})}
+                                    className={`flex-1 p-4 rounded-2xl border-2 transition-all text-left ${gameConfig.deploy_mode === 'location' ? 'border-rose-500 bg-rose-50' : 'border-gray-100 bg-white'}`}
+                                 >
+                                    <p className="font-bold text-sm">Auto-Deploy by Location</p>
+                                    <p className="text-[10px] text-gray-400">Pterodactyl will pick the best node in the location.</p>
+                                 </button>
+                                 <button
+                                    type="button"
+                                    onClick={() => setGameConfig({...gameConfig, deploy_mode: 'node'})}
+                                    className={`flex-1 p-4 rounded-2xl border-2 transition-all text-left ${gameConfig.deploy_mode === 'node' ? 'border-rose-500 bg-rose-50' : 'border-gray-100 bg-white'}`}
+                                 >
+                                    <p className="font-bold text-sm">Manual Node Selection</p>
+                                    <p className="text-[10px] text-gray-400">Select a specific node and allocation ID.</p>
+                                 </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 {gameConfig.deploy_mode === 'location' ? (
+                                    <div className="space-y-1">
+                                       <label className="block text-sm font-medium text-gray-700 ml-1">Select Location</label>
+                                       <select
+                                          className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
+                                          value={gameConfig.location_id}
+                                          onChange={e => setGameConfig({...gameConfig, location_id: e.target.value})}
+                                       >
+                                          <option value="">Select Location</option>
+                                          {metadata?.locations.map((l:any) => <option key={l.id} value={l.id}>{l.short} - {l.long}</option>)}
+                                       </select>
+                                    </div>
+                                 ) : (
+                                    <>
+                                       <div className="space-y-1">
+                                          <label className="block text-sm font-medium text-gray-700 ml-1">Select Node</label>
+                                          <select
+                                             className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
+                                             value={gameConfig.node_id}
+                                             onChange={e => setGameConfig({...gameConfig, node_id: e.target.value})}
+                                          >
+                                             <option value="">Select Node</option>
+                                             {metadata?.nodes.map((n:any) => <option key={n.id} value={n.id}>{n.name}</option>)}
+                                          </select>
+                                       </div>
+                                       <Input label="Allocation ID" placeholder="e.g. 1" value={gameConfig.allocation_id} onChange={e => setGameConfig({...gameConfig, allocation_id: e.target.value})} />
+                                    </>
+                                 )}
+                              </div>
+                           </div>
+                        </>
+                     )}
+                  </div>
+               )}
+
+               <div className="md:col-span-2 flex justify-end gap-3 pt-8 mt-4 border-t border-gray-50">
                   <Button variant="ghost" onClick={() => { setShowCreate(false); setEditingProduct(null); resetForm(); }}>Cancel</Button>
                   <Button type="submit">{editingProduct ? 'Update Product' : 'Create Product'}</Button>
                </div>

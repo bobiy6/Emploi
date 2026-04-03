@@ -54,7 +54,11 @@ export const payInvoice = async (req: any, res: Response) => {
 
             let externalId = null;
             if (adapter && server) {
-                const config = (product.config as any) || {};
+                const productConfig = (product.config as any) || {};
+                const config = {
+                    ...productConfig,
+                    name: `srv-${userId}-${Date.now().toString().slice(-4)}`
+                };
                 externalId = await adapter.create(config, server);
             }
 
