@@ -39,6 +39,22 @@ To connect a Proxmox node in the Admin Infrastructure panel:
     - **Default Node**: The name of your Proxmox node (e.g., `pve`).
 3.  **Test**: Click "Test Connect" to verify.
 
+### Pterodactyl Setup Guide
+To connect a Pterodactyl Panel:
+1.  **In Pterodactyl**:
+    - Go to **Admin Control Panel > Application API**.
+    - Click **Create New**.
+    - Give it a description (e.g., `HostDash`).
+    - Select **Read & Write** for all categories required (Nodes, Servers, Users).
+    - Copy the **API Key** (starts with `ptla_`).
+2.  **In HostDash Admin**:
+    - Go to `/admin/infrastructure`.
+    - Click **Add Physical Server**.
+    - **Server Type**: Pterodactyl.
+    - **API URL**: Your panel URL (e.g., `https://panel.example.com`).
+    - **Application API Key**: The key from step 1.
+3.  **Test**: Click "Test Configuration" to verify.
+
 ## Tech Stack
 - **Backend**: Node.js, Express, TypeScript, Prisma (ORM), JWT.
 - **Frontend**: React, Vite, Tailwind CSS, Lucide React, Axios.
