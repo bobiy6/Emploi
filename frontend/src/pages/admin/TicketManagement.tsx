@@ -3,7 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { MessageSquare, User, Clock, ChevronRight, Send, ArrowLeft, MoreVertical, X, CheckCircle } from 'lucide-react';
+import { MessageSquare, User, Clock, ChevronRight, Send, ArrowLeft, MoreVertical, X, CheckCircle, Trash2 } from 'lucide-react';
 import api from '../../api';
 
 const AdminTicketManagement = () => {
@@ -50,6 +50,34 @@ const AdminTicketManagement = () => {
     }
   };
 
+  const handleClose = async () => {
+    if (!confirm('Close this ticket?')) return;
+    setLoading(true);
+    try {
+      await api.post(`/support/${selectedTicket.id}/close`);
+      handleView(selectedTicket.id);
+      fetchTickets();
+    } catch (err) {
+      alert('Failed to close ticket');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('PERMANENTLY DELETE this ticket? This cannot be undone.')) return;
+    setLoading(true);
+    try {
+      await api.delete(`/support/${selectedTicket.id}`);
+      setSelectedTicket(null);
+      fetchTickets();
+    } catch (err) {
+      alert('Failed to delete ticket');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (selectedTicket) {
     return (
       <div className="flex flex-col h-[calc(100vh-10rem)] space-y-6">
@@ -58,11 +86,16 @@ const AdminTicketManagement = () => {
               <ArrowLeft className="w-4 h-4" /> Back to Queue
            </button>
            <div className="flex items-center gap-4">
-              <Badge variant={selectedTicket.status === 'OPEN' ? 'danger' : 'success'}>
+              {selectedTicket.status !== 'CLOSED' && (
+                 <Button variant="ghost" size="sm" onClick={handleClose} disabled={loading} className="text-gray-500 hover:text-rose-600">
+                    Close Ticket
+                 </Button>
+              )}
+              <Badge variant={selectedTicket.status === 'OPEN' ? 'danger' : selectedTicket.status === 'CLOSED' ? 'ghost' : 'success'}>
                  {selectedTicket.status}
               </Badge>
-              <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
-                 <MoreVertical className="w-4 h-4" />
+              <button onClick={handleDelete} disabled={loading} className="p-2 hover:bg-rose-50 rounded-lg text-gray-400 hover:text-rose-600 transition-colors" title="Delete Ticket">
+                 <Trash2 className="w-4 h-4" />
               </button>
            </div>
         </div>
@@ -105,18 +138,24 @@ const AdminTicketManagement = () => {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleReply} className="p-6 border-t border-gray-50 bg-white flex gap-4">
-               <Input
-                  placeholder="Type your reply to the customer..."
-                  className="flex-1 h-14 bg-gray-50 border-none focus:bg-white focus:ring-2 focus:ring-rose-600 transition-all"
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  disabled={loading}
-               />
-               <Button type="submit" disabled={loading} className="h-14 w-14 p-0 rounded-2xl shadow-lg shadow-rose-100 bg-rose-600 hover:bg-rose-700">
-                  <Send className="w-5 h-5 text-white" />
-               </Button>
-            </form>
+            {selectedTicket.status !== 'CLOSED' ? (
+               <form onSubmit={handleReply} className="p-6 border-t border-gray-50 bg-white flex gap-4">
+                  <Input
+                     placeholder="Type your reply to the customer..."
+                     className="flex-1 h-14 bg-gray-50 border-none focus:bg-white focus:ring-2 focus:ring-rose-600 transition-all"
+                     value={reply}
+                     onChange={(e) => setReply(e.target.value)}
+                     disabled={loading}
+                  />
+                  <Button type="submit" disabled={loading} className="h-14 w-14 p-0 rounded-2xl shadow-lg shadow-rose-100 bg-rose-600 hover:bg-rose-700">
+                     <Send className="w-5 h-5 text-white" />
+                  </Button>
+               </form>
+            ) : (
+               <div className="p-6 border-t border-gray-50 bg-gray-50 text-center">
+                  <p className="text-sm font-bold text-gray-400 italic">This ticket is closed.</p>
+               </div>
+            )}
           </div>
 
           <div className="w-80 hidden lg:block space-y-6">
@@ -176,7 +215,7 @@ const AdminTicketManagement = () => {
                   </div>
                   <div className="flex-1">
                      <div className="flex items-center gap-3 mb-1">
-                        <Badge variant={ticket.status === 'OPEN' ? 'danger' : 'success'}>{ticket.status}</Badge>
+                        <Badge variant={ticket.status === 'OPEN' ? 'danger' : ticket.status === 'CLOSED' ? 'ghost' : 'success'}>{ticket.status}</Badge>
                         <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">#{ticket.id}</span>
                      </div>
                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-rose-600 transition-colors">{ticket.subject}</h3>

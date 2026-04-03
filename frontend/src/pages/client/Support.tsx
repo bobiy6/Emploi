@@ -68,6 +68,20 @@ const Support = () => {
     }
   };
 
+  const handleClose = async () => {
+    if (!confirm('Are you sure you want to close this ticket?')) return;
+    setLoading(true);
+    try {
+      await api.post(`/support/${selectedTicket.id}/close`);
+      handleView(selectedTicket.id);
+      fetchTickets();
+    } catch (err) {
+      alert('Failed to close ticket');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (selectedTicket) {
     return (
       <div className="flex flex-col h-[calc(100vh-10rem)] space-y-6">
@@ -75,9 +89,16 @@ const Support = () => {
            <button onClick={() => setSelectedTicket(null)} className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 transition-all">
               <ArrowLeft className="w-4 h-4" /> Back to Tickets
            </button>
-           <Badge variant={selectedTicket.status === 'OPEN' ? 'primary' : 'success'}>
-              {selectedTicket.status}
-           </Badge>
+           <div className="flex items-center gap-4">
+              {selectedTicket.status !== 'CLOSED' && (
+                 <Button variant="ghost" size="sm" onClick={handleClose} disabled={loading} className="text-gray-500 hover:text-rose-600">
+                    Close Ticket
+                 </Button>
+              )}
+              <Badge variant={selectedTicket.status === 'OPEN' ? 'primary' : selectedTicket.status === 'CLOSED' ? 'ghost' : 'success'}>
+                 {selectedTicket.status}
+              </Badge>
+           </div>
         </div>
 
         <div className="flex-1 flex gap-8 overflow-hidden">
@@ -112,18 +133,24 @@ const Support = () => {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleReply} className="p-6 border-t border-gray-50 bg-white flex gap-4">
-               <Input
-                  placeholder="Type your message here..."
-                  className="flex-1 h-14 bg-gray-50 border-none focus:bg-white focus:ring-2 focus:ring-blue-600 transition-all"
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  disabled={loading}
-               />
-               <Button type="submit" disabled={loading} className="h-14 w-14 p-0 rounded-2xl shadow-lg shadow-blue-100">
-                  <Send className="w-5 h-5" />
-               </Button>
-            </form>
+            {selectedTicket.status !== 'CLOSED' ? (
+               <form onSubmit={handleReply} className="p-6 border-t border-gray-50 bg-white flex gap-4">
+                  <Input
+                     placeholder="Type your message here..."
+                     className="flex-1 h-14 bg-gray-50 border-none focus:bg-white focus:ring-2 focus:ring-blue-600 transition-all"
+                     value={reply}
+                     onChange={(e) => setReply(e.target.value)}
+                     disabled={loading}
+                  />
+                  <Button type="submit" disabled={loading} className="h-14 w-14 p-0 rounded-2xl shadow-lg shadow-blue-100">
+                     <Send className="w-5 h-5" />
+                  </Button>
+               </form>
+            ) : (
+               <div className="p-6 border-t border-gray-50 bg-gray-50 text-center">
+                  <p className="text-sm font-bold text-gray-400 italic">This ticket is closed and cannot be replied to.</p>
+               </div>
+            )}
           </div>
 
           <div className="w-80 hidden lg:block space-y-6">
@@ -212,7 +239,7 @@ const Support = () => {
                   </div>
                   <div className="flex-1">
                      <div className="flex items-center gap-3 mb-1">
-                        <Badge variant={ticket.status === 'OPEN' ? 'primary' : 'success'} className="px-2">
+                        <Badge variant={ticket.status === 'OPEN' ? 'primary' : ticket.status === 'CLOSED' ? 'ghost' : 'success'} className="px-2">
                            {ticket.status}
                         </Badge>
                         <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">#{ticket.id}</span>
