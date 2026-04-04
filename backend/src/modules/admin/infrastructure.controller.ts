@@ -74,19 +74,40 @@ const performTest = async (type: string, url: string, apiKey: string, secret?: s
     const https = await import('https');
     const agent = new https.Agent({ rejectUnauthorized: false });
 
+    // Normalize URL: remove trailing slashes
+    let normalizedUrl = url.replace(/\/+$/, '');
+
     if (type === 'PROXMOX') {
-        await axios.get(`${url}/version`, {
-            headers: { Authorization: `PVEAPIToken=${apiKey}=${secret}` },
-            timeout: 5000,
-            httpsAgent: agent
-        });
+        try {
+            await axios.get(`${normalizedUrl}/version`, {
+                headers: { Authorization: `PVEAPIToken=${apiKey}=${secret}` },
+                timeout: 5000,
+                httpsAgent: agent
+            });
+        } catch (err: any) {
+            if (err.response?.status === 401) throw new Error('API Key or Secret invalid (Unauthorized)');
+            if (err.response?.status === 404) throw new Error('API URL incorrect (Not Found)');
+            throw err;
+        }
     } else {
         // Pterodactyl test
-        await axios.get(`${url}/api/application/nodes`, {
-            headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
-            timeout: 5000,
-            httpsAgent: agent
-        });
+        // Ensure /api is in the URL but not duplicated
+        if (!normalizedUrl.endsWith('/api')) {
+            normalizedUrl += '/api';
+        }
+
+        try {
+            await axios.get(`${normalizedUrl}/application/nests`, {
+                headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+                timeout: 5000,
+                httpsAgent: agent
+            });
+        } catch (err: any) {
+            if (err.response?.status === 401) throw new Error('Clé API invalide (401)');
+            if (err.response?.status === 404) throw new Error('API URL incorrecte (404) - manque /api ou URL fausse');
+            if (err.code === 'ECONNABORTED') throw new Error('Serveur inaccessible (Timeout)');
+            throw err;
+        }
     }
     return { success: true, message: 'Real connection successful!' };
 }
