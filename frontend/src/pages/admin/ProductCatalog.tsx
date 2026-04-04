@@ -35,7 +35,9 @@ const ProductCatalog = () => {
     location_id: '',
     node_id: '',
     allocation_id: '',
-    environment: {}
+    environment: {},
+    startup: '',
+    docker_image: ''
   });
 
   useEffect(() => {
@@ -120,6 +122,30 @@ const ProductCatalog = () => {
     setPrice(prod.price.toString());
     setType(prod.type);
     setCategoryId(prod.categoryId.toString());
+
+    if (prod.type === 'GAME' && prod.config) {
+        const cfg = prod.config;
+        setGameConfig({
+            memory: cfg.memory || 1024,
+            cpu: cfg.cpu || 100,
+            disk: cfg.disk || 5120,
+            swap: cfg.swap || 0,
+            io: cfg.io || 500,
+            databases: cfg.databases || 0,
+            backups: cfg.backups || 0,
+            allocations: cfg.allocations || 1,
+            deploy_mode: cfg.deploy_mode || 'location',
+            location_id: cfg.location_id || '',
+            node_id: cfg.node_id || '',
+            allocation_id: cfg.allocation_id || '',
+            environment: cfg.environment || {},
+            startup: cfg.startup || '',
+            docker_image: cfg.docker_image || ''
+        });
+        setSelectedPveServer(cfg.serverId || '');
+        // Note: Nest and Egg selection would require re-fetching metadata and matching IDs
+    }
+
     setShowCreate(true);
   };
 
@@ -209,7 +235,12 @@ const ProductCatalog = () => {
                                  egg?.relationships?.variables?.data.forEach((v: any) => {
                                     env[v.attributes.env_variable] = v.attributes.default_value;
                                  });
-                                 setGameConfig({...gameConfig, environment: env});
+                                 setGameConfig({
+                                    ...gameConfig,
+                                    environment: env,
+                                    startup: egg.startup,
+                                    docker_image: egg.docker_image
+                                 });
                               }}
                               required
                            >
@@ -221,11 +252,12 @@ const ProductCatalog = () => {
 
                      {selectedEgg && (
                         <>
-                           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                               <Input label="Memory (MB)" type="number" value={gameConfig.memory} onChange={e => setGameConfig({...gameConfig, memory: e.target.value})} />
                               <Input label="CPU (%)" type="number" value={gameConfig.cpu} onChange={e => setGameConfig({...gameConfig, cpu: e.target.value})} />
                               <Input label="Disk (MB)" type="number" value={gameConfig.disk} onChange={e => setGameConfig({...gameConfig, disk: e.target.value})} />
                               <Input label="Swap (MB)" type="number" value={gameConfig.swap} onChange={e => setGameConfig({...gameConfig, swap: e.target.value})} />
+                              <Input label="IO (Block Weight)" type="number" value={gameConfig.io} onChange={e => setGameConfig({...gameConfig, io: e.target.value})} />
                            </div>
 
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -234,10 +266,22 @@ const ProductCatalog = () => {
                               <Input label="Allocations" type="number" value={gameConfig.allocations} onChange={e => setGameConfig({...gameConfig, allocations: e.target.value})} />
                            </div>
 
-                           <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
-                              <h4 className="font-bold text-gray-900 flex items-center gap-2"><Settings className="w-4 h-4" /> Startup Configuration</h4>
-                              <p className="text-xs text-gray-500 font-mono bg-white p-3 rounded-lg border border-gray-200">{selectedEgg.startup}</p>
-                              <p className="text-xs text-gray-400 italic">Docker Image: {selectedEgg.docker_image}</p>
+                           <div className="space-y-4">
+                              <h4 className="font-bold text-gray-900 flex items-center gap-2"><Settings className="w-4 h-4" /> Startup & Docker Configuration</h4>
+                              <div className="grid grid-cols-1 gap-4">
+                                 <Input
+                                    label="Startup Command"
+                                    value={gameConfig.startup}
+                                    onChange={e => setGameConfig({...gameConfig, startup: e.target.value})}
+                                    placeholder="e.g. java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}"
+                                 />
+                                 <Input
+                                    label="Docker Image"
+                                    value={gameConfig.docker_image}
+                                    onChange={e => setGameConfig({...gameConfig, docker_image: e.target.value})}
+                                    placeholder="e.g. quay.io/pterodactyl/core:java"
+                                 />
+                              </div>
                            </div>
 
                            <div className="space-y-4">
