@@ -8,7 +8,9 @@ export class PterodactylAdapter implements ProvisioningAdapter {
 
   private getNormalizedUrl(url: string) {
     let normalized = url.replace(/\/+$/, '');
-    if (!normalized.endsWith('/api')) normalized += '/api';
+    if (normalized.endsWith('/api')) {
+        normalized = normalized.substring(0, normalized.length - 4);
+    }
     return normalized;
   }
 
@@ -21,19 +23,19 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   }
 
   private async getOrCreateUser(email: string, name: string, server: any): Promise<number> {
-      const url = this.getNormalizedUrl(server.url);
+      const baseUrl = this.getNormalizedUrl(server.url);
       const headers = await this.getAuthHeader(server);
 
       try {
           // Search user by email
-          const searchRes = await axios.get(`${url}/application/users?filter[email]=${email}`, { headers, httpsAgent: this.agent });
+          const searchRes = await axios.get(`${baseUrl}/api/application/users?filter[email]=${email}`, { headers, httpsAgent: this.agent });
           if (searchRes.data.data.length > 0) {
               return searchRes.data.data[0].attributes.id;
           }
 
           // Create if not exists
           const splitName = name.split(' ');
-          const createRes = await axios.post(`${url}/application/users`, {
+          const createRes = await axios.post(`${baseUrl}/api/application/users`, {
               email,
               username: email.split('@')[0] + Math.floor(Math.random() * 1000),
               first_name: splitName[0] || 'User',
@@ -48,7 +50,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   }
 
   async create(config: any, server: any): Promise<string> {
-    const url = this.getNormalizedUrl(server.url);
+    const baseUrl = this.getNormalizedUrl(server.url);
 
     // 1. Get or Create Pterodactyl User
     const pteroUserId = await this.getOrCreateUser(config.userEmail, config.userName, server);
@@ -82,7 +84,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     };
 
     try {
-        const res = await axios.post(`${url}/application/servers`, requestData, {
+        const res = await axios.post(`${baseUrl}/api/application/servers`, requestData, {
           headers: await this.getAuthHeader(server),
           httpsAgent: this.agent
         });
@@ -94,7 +96,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
         // Fetch it now to get the IP:PORT
         let connectionInfo = "Pending allocation...";
         try {
-            const detailRes = await axios.get(`${url}/application/servers/${serverData.id}?include=allocations`, {
+            const detailRes = await axios.get(`${baseUrl}/api/application/servers/${serverData.id}?include=allocations`, {
                 headers: await this.getAuthHeader(server),
                 httpsAgent: this.agent
             });
@@ -111,7 +113,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
             uuid: serverData.uuid,
             identifier: serverData.identifier,
             connection: connectionInfo,
-            panel_url: url.replace('/api', '')
+            panel_url: baseUrl
         };
 
         createLog({
@@ -140,9 +142,9 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   }
 
   async suspend(externalId: string, server: any): Promise<boolean> {
-    const url = this.getNormalizedUrl(server.url);
+    const baseUrl = this.getNormalizedUrl(server.url);
     const id = this.getInternalId(externalId);
-    await axios.post(`${url}/application/servers/${id}/suspend`, {}, {
+    await axios.post(`${baseUrl}/api/application/servers/${id}/suspend`, {}, {
       headers: await this.getAuthHeader(server),
       httpsAgent: this.agent
     });
@@ -150,9 +152,9 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   }
 
   async terminate(externalId: string, server: any): Promise<boolean> {
-    const url = this.getNormalizedUrl(server.url);
+    const baseUrl = this.getNormalizedUrl(server.url);
     const id = this.getInternalId(externalId);
-    await axios.delete(`${url}/application/servers/${id}`, {
+    await axios.delete(`${baseUrl}/api/application/servers/${id}`, {
       headers: await this.getAuthHeader(server),
       httpsAgent: this.agent
     });
@@ -160,7 +162,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   }
 
   async powerAction(externalId: string, action: string, server: any): Promise<boolean> {
-    const url = this.getNormalizedUrl(server.url).replace('/api', ''); // Client API usually doesn't use /api prefix in the same way or uses /api/client
+    const baseUrl = this.getNormalizedUrl(server.url);
     const id = this.getInternalId(externalId);
 
     // Pterodactyl Client API is usually at /api/client/servers/<identifier>/power
@@ -172,7 +174,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     } catch {}
 
     const signal = action === 'stop' ? 'kill' : action === 'start' ? 'start' : 'restart';
-    await axios.post(`${url}/api/client/servers/${identifier}/power`, { signal }, {
+    await axios.post(`${baseUrl}/api/client/servers/${identifier}/power`, { signal }, {
       headers: await this.getAuthHeader(server),
       httpsAgent: this.agent
     });

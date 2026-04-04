@@ -48,13 +48,24 @@ export const payInvoice = async (req: any, res: Response) => {
 
             const { getAdapter, getBestServer } = await import('../provisioning/provisioning.service.js');
             const adapter = getAdapter(moduleName);
-            const server = await getBestServer(product.type);
+
+            const productConfig = (product.config as any) || {};
+            let server = null;
+
+            // Try to use the specific server linked to the product if it exists
+            if (productConfig.serverId) {
+                server = await prisma.server.findUnique({ where: { id: parseInt(productConfig.serverId) } });
+            }
+
+            // Fallback to best available server if none specified or not found
+            if (!server) {
+                server = await getBestServer(product.type);
+            }
 
             if (!server) throw new Error('No active server available for provisioning');
 
             let externalId = null;
             if (adapter && server) {
-                const productConfig = (product.config as any) || {};
                 const config = {
                     ...productConfig,
                     name: `srv-${userId}-${Date.now().toString().slice(-4)}`,

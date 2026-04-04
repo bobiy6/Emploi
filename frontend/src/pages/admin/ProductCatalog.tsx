@@ -84,10 +84,8 @@ const ProductCatalog = () => {
         : {
             ...gameConfig,
             serverId: selectedPveServer,
-            nest_id: selectedNest?.id,
-            egg_id: selectedEgg?.id,
-            docker_image: selectedEgg?.docker_image,
-            startup: selectedEgg?.startup
+            nest_id: selectedNest?.id || gameConfig.nest_id,
+            egg_id: selectedEgg?.id || gameConfig.egg_id
           }
     };
 
