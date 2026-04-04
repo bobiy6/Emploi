@@ -30,7 +30,17 @@ const Services = () => {
     }
   };
 
+  const getPteroDetails = (service: any) => {
+     if (service.module !== 'pterodactyl' || !service.externalId) return null;
+     try {
+        return JSON.parse(service.externalId);
+     } catch {
+        return null;
+     }
+  };
+
   if (selectedService) {
+     const ptero = getPteroDetails(selectedService);
      return (
         <div className="space-y-8">
            <button onClick={() => setSelectedService(null)} className="text-sm font-bold text-blue-600 hover:underline flex items-center gap-1">
@@ -44,7 +54,9 @@ const Services = () => {
                  </div>
                  <div>
                     <h2 className="text-3xl font-black text-gray-900">{selectedService.product.name}</h2>
-                    <p className="text-sm font-bold text-gray-400">UUID: {selectedService.externalId}</p>
+                    <p className="text-sm font-bold text-gray-400">
+                       {ptero ? `ID: ${ptero.identifier}` : `UUID: ${selectedService.externalId}`}
+                    </p>
                  </div>
               </div>
               <Badge variant="success" className="text-base px-4 py-1 uppercase">{selectedService.status}</Badge>
@@ -96,6 +108,24 @@ const Services = () => {
                           <span className="text-gray-400 text-sm">Module</span>
                           <span className="font-bold uppercase text-blue-600">{selectedService.module}</span>
                        </div>
+                       {ptero && (
+                          <>
+                             <div className="flex justify-between border-b border-gray-50 pb-2">
+                                <span className="text-gray-400 text-sm">Address</span>
+                                <span className="font-mono font-bold text-rose-600">{ptero.connection}</span>
+                             </div>
+                             <div className="flex flex-col gap-2 pt-2 border-b border-gray-50 pb-4">
+                                <span className="text-gray-400 text-sm">Management Panel</span>
+                                <a
+                                  href={`${ptero.panel_url}/server/${ptero.identifier}`}
+                                  target="_blank"
+                                  className="bg-gray-900 text-white p-3 rounded-xl text-center text-xs font-bold hover:bg-black transition-all"
+                                >
+                                   Open Pterodactyl Panel
+                                </a>
+                             </div>
+                          </>
+                       )}
                        <div className="flex justify-between">
                           <span className="text-gray-400 text-sm">Created At</span>
                           <span className="font-bold">{new Date(selectedService.createdAt).toLocaleDateString()}</span>
@@ -142,7 +172,11 @@ const Services = () => {
                 <Badge variant={service.status === 'ACTIVE' ? 'success' : 'warning'}>{service.status}</Badge>
               </div>
               <h3 className="text-xl font-bold mb-1">{service.product.name}</h3>
-              <p className="text-xs text-gray-400 font-bold mb-4">IP: 192.168.{Math.floor(Math.random() * 255)}.{Math.floor(Math.random() * 255)}</p>
+              <p className="text-xs text-gray-400 font-bold mb-4">
+                 {service.module === 'pterodactyl' && getPteroDetails(service)
+                    ? `IP: ${getPteroDetails(service).connection}`
+                    : `Node: ${service.module}`}
+              </p>
               <div className="flex justify-between items-center pt-4 border-t border-gray-50">
                  <div className="flex gap-1">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
