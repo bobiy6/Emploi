@@ -45,7 +45,12 @@ To connect a Pterodactyl Panel:
     - Go to **Admin Control Panel > Application API**.
     - Click **Create New**.
     - Give it a description (e.g., `HostDash`).
-    - Select **Read & Write** for all categories required (Nodes, Servers, Users, Locations, Nests).
+    - **IMPORTANT**: Select **Read & Write** for **ALL** of the following categories:
+      - **Nodes**
+      - **Servers**
+      - **Users** (Crucial for account syncing)
+      - **Locations**
+      - **Nests**
     - Copy the **API Key** (starts with `ptla_`).
 2.  **In HostDash Admin**:
     - Go to `/admin/infrastructure`.

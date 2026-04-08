@@ -50,6 +50,9 @@ export class PterodactylAdapter implements ProvisioningAdapter {
 
           return createRes.data.attributes.id;
       } catch (err: any) {
+          if (err.response?.status === 403) {
+              throw new Error('Action non autorisée sur Pterodactyl. Vérifiez que votre clé API dispose des permissions "Read & Write" pour les USERS.');
+          }
           const apiError = err.response?.data?.errors?.[0]?.detail || err.message;
           console.error('Pterodactyl User Sync Error:', err.response?.data || err.message);
           throw new Error(`Failed to sync user: ${apiError}`);

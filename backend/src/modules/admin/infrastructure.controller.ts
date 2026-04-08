@@ -102,13 +102,22 @@ const performTest = async (type: string, url: string, apiKey: string, secret?: s
         const baseUrl = normalizePteroUrl(url);
 
         try {
+            // Test basic connectivity and Nests access
             await axios.get(`${baseUrl}/api/application/nests`, {
+                headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+                timeout: 5000,
+                httpsAgent: agent
+            });
+
+            // Test Users access (crucial for provisioning)
+            await axios.get(`${baseUrl}/api/application/users`, {
                 headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
                 timeout: 5000,
                 httpsAgent: agent
             });
         } catch (err: any) {
             if (err.response?.status === 401) throw new Error('Clé API invalide (401)');
+            if (err.response?.status === 403) throw new Error('Action non autorisée (403) - Vérifiez les permissions de la clé API (Nests, Users, Servers)');
             if (err.response?.status === 404) throw new Error(`API URL incorrecte (404) - Tentative sur ${baseUrl}/api/application/nests`);
             if (err.code === 'ECONNABORTED') throw new Error('Serveur inaccessible (Timeout)');
             throw new Error(`Pterodactyl error: ${err.message}`);
