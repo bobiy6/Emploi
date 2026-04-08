@@ -7,18 +7,10 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   private agent = new https.Agent({ rejectUnauthorized: false });
 
   private getNormalizedUrl(url: string) {
-    let normalized = url.trim().replace(/\/+$/, '');
-
-    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
-        normalized = 'https://' + normalized;
-    }
-
+    let normalized = url.replace(/\/+$/, '');
     if (normalized.endsWith('/api')) {
         normalized = normalized.substring(0, normalized.length - 4);
     }
-
-    normalized = normalized.replace(/([^:]\/)\/+/g, "$1");
-
     return normalized;
   }
 
@@ -36,24 +28,31 @@ export class PterodactylAdapter implements ProvisioningAdapter {
 
       try {
           // Search user by email
-          const searchRes = await axios.get(`${baseUrl}/api/application/users?filter[email]=${email}`, { headers, httpsAgent: this.agent });
+          const searchRes = await axios.get(`${baseUrl}/api/application/users?filter[email]=${encodeURIComponent(email)}`, { headers, httpsAgent: this.agent });
           if (searchRes.data.data.length > 0) {
               return searchRes.data.data[0].attributes.id;
           }
 
           // Create if not exists
-          const splitName = name.split(' ');
+          const splitName = name.trim().split(/\s+/);
+          const firstName = splitName[0] || 'User';
+          const lastName = splitName.slice(1).join(' ') || 'HostDash';
+
+          // Sanitize username: only a-z, A-Z, 0-9 and _ . - are usually allowed
+          const sanitizedUsername = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.floor(100 + Math.random() * 900);
+
           const createRes = await axios.post(`${baseUrl}/api/application/users`, {
               email,
-              username: email.split('@')[0] + Math.floor(Math.random() * 1000),
-              first_name: splitName[0] || 'User',
-              last_name: splitName[1] || 'HostDash'
+              username: sanitizedUsername,
+              first_name: firstName,
+              last_name: lastName
           }, { headers, httpsAgent: this.agent });
 
           return createRes.data.attributes.id;
       } catch (err: any) {
+          const apiError = err.response?.data?.errors?.[0]?.detail || err.message;
           console.error('Pterodactyl User Sync Error:', err.response?.data || err.message);
-          throw new Error('Failed to sync user with Pterodactyl');
+          throw new Error(`Failed to sync user: ${apiError}`);
       }
   }
 

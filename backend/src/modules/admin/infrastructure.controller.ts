@@ -70,20 +70,10 @@ export const testRawConnection = async (req: any, res: Response) => {
 };
 
 const normalizePteroUrl = (url: string) => {
-    let normalized = url.trim().replace(/\/+$/, '');
-
-    // Ensure protocol is present
-    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
-        normalized = 'https://' + normalized;
-    }
-
+    let normalized = url.replace(/\/+$/, '');
     if (normalized.endsWith('/api')) {
         normalized = normalized.substring(0, normalized.length - 4);
     }
-
-    // Final trim of any double slashes that might have been introduced except for protocol
-    normalized = normalized.replace(/([^:]\/)\/+/g, "$1");
-
     return normalized;
 };
 
