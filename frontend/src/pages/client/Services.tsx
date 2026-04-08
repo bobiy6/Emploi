@@ -30,6 +30,17 @@ const Services = () => {
     }
   };
 
+  const handleRefresh = async (serviceId: number) => {
+    try {
+      const res = await api.post(`/services/${serviceId}/refresh`);
+      setSelectedService(res.data);
+      setServices(services.map(s => s.id === serviceId ? res.data : s));
+      alert('Details refreshed successfully');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Refresh failed');
+    }
+  };
+
   const getPteroDetails = (service: any) => {
      if (service.module !== 'pterodactyl' || !service.externalId) return null;
      try {
@@ -112,8 +123,27 @@ const Services = () => {
                           <>
                              <div className="flex justify-between border-b border-gray-50 pb-2">
                                 <span className="text-gray-400 text-sm">Address</span>
-                                <span className="font-mono font-bold text-rose-600">{ptero.connection}</span>
+                                <div className="flex flex-col items-end">
+                                   <span className="font-mono font-bold text-rose-600">{ptero.connection}</span>
+                                   <button
+                                      onClick={() => handleRefresh(selectedService.id)}
+                                      className="text-[10px] text-blue-600 font-bold hover:underline"
+                                   >
+                                      Refresh IP
+                                   </button>
+                                </div>
                              </div>
+                             {ptero.ptero_password && (
+                                <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl mt-4">
+                                   <p className="text-[10px] text-blue-600 font-black uppercase mb-1">Pterodactyl Credentials</p>
+                                   <div className="flex flex-col gap-1">
+                                      <p className="text-xs font-bold">User: <span className="font-mono">{selectedService.user?.email || 'Your email'}</span></p>
+                                      <p className="text-xs font-bold">Pass: <span className="font-mono text-rose-600">{ptero.ptero_password}</span></p>
+                                   </div>
+                                   <p className="text-[8px] text-blue-400 mt-2 italic">Change your password after first login.</p>
+                                </div>
+                             )}
+
                              <div className="flex flex-col gap-2 pt-2 border-b border-gray-50 pb-4">
                                 <span className="text-gray-400 text-sm">Management Panel</span>
                                 <a

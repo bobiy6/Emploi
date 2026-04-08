@@ -77,7 +77,14 @@ export const payInvoice = async (req: any, res: Response) => {
 
             await prisma.service.update({
                 where: { id: createdService.id },
-                data: { status: 'ACTIVE', externalId }
+                data: {
+                    status: 'ACTIVE',
+                    externalId,
+                    config: {
+                        ...(createdService.config as any || {}),
+                        serverId: server.id
+                    }
+                }
             });
 
             await createLog({

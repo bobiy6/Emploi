@@ -37,17 +37,67 @@ export const powerAction = async (req: any, res: Response) => {
     });
     if (!service || service.userId !== req.userId) return res.status(404).json({ message: 'Service not found' });
 
-    const { getAdapter, getBestServer } = await import('../provisioning/provisioning.service.js');
-    const adapter = getAdapter(service.module);
-    const server = await getBestServer(service.product.type);
+    const serviceConfig = (service.config as any) || {};
+    const serverId = serviceConfig.serverId;
 
-    if (adapter && service.externalId && server) {
+    const { getAdapter } = await import('../provisioning/provisioning.service.js');
+    const adapter = getAdapter(service.module);
+
+    let server = null;
+    if (serverId) {
+        server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
+    }
+
+    if (!server) {
+        return res.status(400).json({ message: 'Could not find the original server for this service' });
+    }
+
+    if (adapter && service.externalId) {
         await adapter.powerAction(service.externalId, action, server);
     }
     res.json({ message: `Service ${action} successful` });
-  } catch (error) {
-    res.status(500).json({ message: 'Error performing power action', error });
+  } catch (error: any) {
+    console.error('Power Action Error:', error.response?.data || error.message);
+    res.status(500).json({ message: 'Error performing power action', error: error.message });
   }
+};
+
+export const refreshServiceDetails = async (req: any, res: Response) => {
+    const { id } = req.params;
+    try {
+        const service = await prisma.service.findUnique({
+            where: { id: parseInt(id as string) },
+            include: { product: true }
+        });
+        if (!service || service.userId !== req.userId) return res.status(404).json({ message: 'Service not found' });
+        if (service.module !== 'pterodactyl') return res.status(400).json({ message: 'Only Pterodactyl services can be refreshed' });
+
+        const serviceConfig = (service.config as any) || {};
+        const serverId = serviceConfig.serverId;
+        const server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
+
+        if (!server || !service.externalId) throw new Error('Incomplete service or server data');
+
+        const { getAdapter } = await import('../provisioning/provisioning.service.js');
+        const adapter: any = getAdapter('pterodactyl');
+
+        // Use the adapter to fetch the latest details
+        const details = await adapter.getLatestDetails(service.externalId, server);
+
+        // Update service config with new details (IP, etc.)
+        const updatedConfig = { ...serviceConfig, ...details };
+        const updatedService = await prisma.service.update({
+            where: { id: service.id },
+            data: {
+                externalId: JSON.stringify(details), // Ensure we update the identifier if needed
+                config: updatedConfig
+            }
+        });
+
+        res.json(updatedService);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Error refreshing service', error: error.message });
+    }
 };
 
 export const getAllServices = async (req: any, res: Response) => {

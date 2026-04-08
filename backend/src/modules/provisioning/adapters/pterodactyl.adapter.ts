@@ -22,7 +22,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     };
   }
 
-  private async getOrCreateUser(email: string, name: string, server: any): Promise<number> {
+  private async getOrCreateUser(email: string, name: string, server: any): Promise<{ id: number, password?: string }> {
       const baseUrl = this.getNormalizedUrl(server.url);
       const headers = await this.getAuthHeader(server);
 
@@ -30,7 +30,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
           // Search user by email
           const searchRes = await axios.get(`${baseUrl}/api/application/users?filter[email]=${encodeURIComponent(email)}`, { headers, httpsAgent: this.agent });
           if (searchRes.data.data.length > 0) {
-              return searchRes.data.data[0].attributes.id;
+              return { id: searchRes.data.data[0].attributes.id };
           }
 
           // Create if not exists
@@ -40,16 +40,21 @@ export class PterodactylAdapter implements ProvisioningAdapter {
 
           // Sanitize username: only a-z, A-Z, 0-9 and _ . - are usually allowed
           const sanitizedUsername = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.floor(100 + Math.random() * 900);
+          const generatedPassword = Math.random().toString(36).slice(-10) + 'A1!';
 
           const createRes = await axios.post(`${baseUrl}/api/application/users`, {
               email,
               username: sanitizedUsername,
               first_name: firstName,
-              last_name: lastName
+              last_name: lastName,
+              password: generatedPassword
           }, { headers, httpsAgent: this.agent });
 
-          return createRes.data.attributes.id;
+          return { id: createRes.data.attributes.id, password: generatedPassword };
       } catch (err: any) {
+          if (err.response?.status === 403) {
+              throw new Error('Action non autorisée sur Pterodactyl. Vérifiez que votre clé API dispose des permissions "Read & Write" pour les USERS.');
+          }
           const apiError = err.response?.data?.errors?.[0]?.detail || err.message;
           console.error('Pterodactyl User Sync Error:', err.response?.data || err.message);
           throw new Error(`Failed to sync user: ${apiError}`);
@@ -60,7 +65,8 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     const baseUrl = this.getNormalizedUrl(server.url);
 
     // 1. Get or Create Pterodactyl User
-    const pteroUserId = await this.getOrCreateUser(config.userEmail, config.userName, server);
+    const userResult = await this.getOrCreateUser(config.userEmail, config.userName, server);
+    const pteroUserId = userResult.id;
 
     // 2. Build Creation Payload
     const requestData: any = {
@@ -120,7 +126,8 @@ export class PterodactylAdapter implements ProvisioningAdapter {
             uuid: serverData.uuid,
             identifier: serverData.identifier,
             connection: connectionInfo,
-            panel_url: baseUrl
+            panel_url: baseUrl,
+            ptero_password: userResult.password || 'Existing account password'
         };
 
         createLog({
@@ -173,18 +180,52 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     const id = this.getInternalId(externalId);
 
     // Pterodactyl Client API is usually at /api/client/servers/<identifier>/power
-    // But identifiers are strings like 'a1b2c3d4'. Our JSON contains this as 'identifier'.
     let identifier = id;
     try {
         const data = JSON.parse(externalId);
         identifier = data.identifier || id;
     } catch {}
 
-    const signal = action === 'stop' ? 'kill' : action === 'start' ? 'start' : 'restart';
-    await axios.post(`${baseUrl}/api/client/servers/${identifier}/power`, { signal }, {
-      headers: await this.getAuthHeader(server),
-      httpsAgent: this.agent
-    });
+    const signal = action === 'stop' ? 'stop' : action === 'start' ? 'start' : 'restart';
+
+    try {
+        await axios.post(`${baseUrl}/api/client/servers/${identifier}/power`, { signal }, {
+          headers: await this.getAuthHeader(server),
+          httpsAgent: this.agent
+        });
+    } catch (err: any) {
+        // If 'stop' failed, try 'kill' as fallback
+        if (action === 'stop') {
+            await axios.post(`${baseUrl}/api/client/servers/${identifier}/power`, { signal: 'kill' }, {
+                headers: await this.getAuthHeader(server),
+                httpsAgent: this.agent
+            });
+        } else {
+            throw err;
+        }
+    }
     return true;
+  }
+
+  async getLatestDetails(externalId: string, server: any): Promise<any> {
+    const baseUrl = this.getNormalizedUrl(server.url);
+    const id = this.getInternalId(externalId);
+    const headers = await this.getAuthHeader(server);
+
+    const res = await axios.get(`${baseUrl}/api/application/servers/${id}?include=allocations`, {
+        headers,
+        httpsAgent: this.agent
+    });
+
+    const serverData = res.data.attributes;
+    const primary = serverData.relationships?.allocations?.data.find((a: any) => a.attributes.is_default);
+
+    return {
+        id: serverData.id,
+        uuid: serverData.uuid,
+        identifier: serverData.identifier,
+        connection: primary ? `${primary.attributes.ip}:${primary.attributes.port}` : "Pending allocation...",
+        panel_url: baseUrl
+    };
   }
 }
