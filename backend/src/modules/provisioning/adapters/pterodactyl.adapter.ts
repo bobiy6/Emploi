@@ -7,10 +7,18 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   private agent = new https.Agent({ rejectUnauthorized: false });
 
   private getNormalizedUrl(url: string) {
-    let normalized = url.replace(/\/+$/, '');
+    let normalized = url.trim().replace(/\/+$/, '');
+
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+        normalized = 'https://' + normalized;
+    }
+
     if (normalized.endsWith('/api')) {
         normalized = normalized.substring(0, normalized.length - 4);
     }
+
+    normalized = normalized.replace(/([^:]\/)\/+/g, "$1");
+
     return normalized;
   }
 

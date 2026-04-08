@@ -60,11 +60,14 @@ const ProductCatalog = () => {
 
   const fetchMetadata = async (serverId: string) => {
     if(!serverId) return;
+    setMetadata(null);
     try {
       const res = await api.get(`/admin/infrastructure/${serverId}/pterodactyl-metadata`);
       setMetadata(res.data);
-    } catch (err) {
-      alert('Failed to fetch Pterodactyl metadata');
+    } catch (err: any) {
+      console.error('Metadata Fetch Error:', err.response?.data || err.message);
+      const msg = err.response?.data?.error || err.message;
+      alert(`Erreur Pterodactyl: ${msg}\n\nAssurez-vous que l'URL commence par http/https et que la clé API est valide.`);
     }
   };
 
@@ -209,7 +212,9 @@ const ProductCatalog = () => {
                         <div className="space-y-1">
                            <label className="block text-sm font-black text-gray-400 uppercase tracking-widest ml-1">Nest</label>
                            <select
-                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
+                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                              value={selectedNest?.id || ''}
+                              disabled={!metadata}
                               onChange={(e) => {
                                  const nest = metadata?.nests.find((n:any) => n.id === parseInt(e.target.value));
                                  setSelectedNest(nest);
@@ -217,7 +222,7 @@ const ProductCatalog = () => {
                               }}
                               required
                            >
-                              <option value="">Select Nest</option>
+                              <option value="">{metadata ? 'Select Nest' : 'Loading metadata...'}</option>
                               {metadata?.nests.map((n:any) => <option key={n.id} value={n.id}>{n.name}</option>)}
                            </select>
                         </div>
@@ -225,7 +230,9 @@ const ProductCatalog = () => {
                         <div className="space-y-1">
                            <label className="block text-sm font-black text-gray-400 uppercase tracking-widest ml-1">Egg</label>
                            <select
-                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
+                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                              value={selectedEgg?.id || ''}
+                              disabled={!selectedNest}
                               onChange={(e) => {
                                  const egg = selectedNest?.eggs.find((eg:any) => eg.id === parseInt(e.target.value));
                                  setSelectedEgg(egg);
@@ -242,13 +249,20 @@ const ProductCatalog = () => {
                               }}
                               required
                            >
-                              <option value="">Select Egg</option>
+                              <option value="">{!selectedNest ? 'Select Nest first' : 'Select Egg'}</option>
                               {selectedNest?.eggs.map((e:any) => <option key={e.id} value={e.id}>{e.name}</option>)}
                            </select>
                         </div>
                      </div>
 
-                     {selectedEgg && (
+                     {!metadata && selectedPveServer && (
+                        <div className="p-4 bg-blue-50 text-blue-700 rounded-xl flex items-center gap-3">
+                           <Activity className="w-5 h-5 animate-spin" />
+                           <p className="text-sm font-bold">Fetching latest Nests and Eggs from Pterodactyl...</p>
+                        </div>
+                     )}
+
+                     {(selectedEgg || editingProduct) && (
                         <>
                            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                               <Input label="Memory (MB)" type="number" value={gameConfig.memory} onChange={e => setGameConfig({...gameConfig, memory: e.target.value})} />
@@ -358,7 +372,7 @@ const ProductCatalog = () => {
                )}
 
                <div className="md:col-span-2 flex justify-end gap-3 pt-8 mt-4 border-t border-gray-50">
-                  <Button variant="ghost" onClick={() => { setShowCreate(false); setEditingProduct(null); resetForm(); }}>Cancel</Button>
+                  <Button variant="ghost" type="button" onClick={() => { setShowCreate(false); setEditingProduct(null); resetForm(); }}>Cancel</Button>
                   <Button type="submit">{editingProduct ? 'Update Product' : 'Create Product'}</Button>
                </div>
             </form>
