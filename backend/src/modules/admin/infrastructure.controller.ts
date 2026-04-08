@@ -69,6 +69,24 @@ export const testRawConnection = async (req: any, res: Response) => {
     }
 };
 
+const normalizePteroUrl = (url: string) => {
+    let normalized = url.trim().replace(/\/+$/, '');
+
+    // Ensure protocol is present
+    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+        normalized = 'https://' + normalized;
+    }
+
+    if (normalized.endsWith('/api')) {
+        normalized = normalized.substring(0, normalized.length - 4);
+    }
+
+    // Final trim of any double slashes that might have been introduced except for protocol
+    normalized = normalized.replace(/([^:]\/)\/+/g, "$1");
+
+    return normalized;
+};
+
 const performTest = async (type: string, url: string, apiKey: string, secret?: string | null) => {
     const axios = (await import('axios')).default;
     const https = await import('https');
@@ -91,22 +109,19 @@ const performTest = async (type: string, url: string, apiKey: string, secret?: s
         }
     } else {
         // Pterodactyl test
-        // Ensure /api is in the URL but not duplicated
-        if (!normalizedUrl.endsWith('/api')) {
-            normalizedUrl += '/api';
-        }
+        const baseUrl = normalizePteroUrl(url);
 
         try {
-            await axios.get(`${normalizedUrl}/application/nests`, {
+            await axios.get(`${baseUrl}/api/application/nests`, {
                 headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
                 timeout: 5000,
                 httpsAgent: agent
             });
         } catch (err: any) {
             if (err.response?.status === 401) throw new Error('Clé API invalide (401)');
-            if (err.response?.status === 404) throw new Error('API URL incorrecte (404) - manque /api ou URL fausse');
+            if (err.response?.status === 404) throw new Error(`API URL incorrecte (404) - Tentative sur ${baseUrl}/api/application/nests`);
             if (err.code === 'ECONNABORTED') throw new Error('Serveur inaccessible (Timeout)');
-            throw err;
+            throw new Error(`Pterodactyl error: ${err.message}`);
         }
     }
     return { success: true, message: 'Real connection successful!' };
@@ -122,18 +137,19 @@ export const getPterodactylMetadata = async (req: any, res: Response) => {
         const server = await prisma.server.findUnique({ where: { id: parseInt(id) } });
         if (!server || server.type !== 'PTERODACTYL') return res.status(404).json({ message: 'Pterodactyl server not found' });
 
+        const baseUrl = normalizePteroUrl(server.url);
         const headers = { Authorization: `Bearer ${server.apiKey}`, Accept: 'application/json' };
 
         const [nestsRes, locationsRes, nodesRes] = await Promise.all([
-            axios.get(`${server.url}/api/application/nests`, { headers, httpsAgent: agent }),
-            axios.get(`${server.url}/api/application/locations`, { headers, httpsAgent: agent }),
-            axios.get(`${server.url}/api/application/nodes`, { headers, httpsAgent: agent })
+            axios.get(`${baseUrl}/api/application/nests`, { headers, httpsAgent: agent }),
+            axios.get(`${baseUrl}/api/application/locations`, { headers, httpsAgent: agent }),
+            axios.get(`${baseUrl}/api/application/nodes`, { headers, httpsAgent: agent })
         ]);
 
         // Fetch eggs for each nest
         const nests = nestsRes.data.data;
         const nestsWithEggs = await Promise.all(nests.map(async (nest: any) => {
-            const eggsRes = await axios.get(`${server.url}/api/application/nests/${nest.attributes.id}/eggs?include=variables`, { headers, httpsAgent: agent });
+            const eggsRes = await axios.get(`${baseUrl}/api/application/nests/${nest.attributes.id}/eggs?include=variables`, { headers, httpsAgent: agent });
             return {
                 ...nest.attributes,
                 eggs: eggsRes.data.data.map((e: any) => e.attributes)
@@ -146,6 +162,11 @@ export const getPterodactylMetadata = async (req: any, res: Response) => {
             nodes: nodesRes.data.data.map((n: any) => n.attributes)
         });
     } catch (error: any) {
-        res.status(500).json({ message: 'Error fetching Pterodactyl metadata', error: error.message });
+        console.error('PTERODACTYL METADATA FETCH ERROR:', error.response?.data || error.message);
+        res.status(500).json({
+            message: 'Error fetching Pterodactyl metadata',
+            error: error.message,
+            details: error.response?.data
+        });
     }
 };
