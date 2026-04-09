@@ -92,8 +92,38 @@ const AdminServiceManagement = () => {
                         >
                           <History className="w-3 h-3" /> Timeline
                         </button>
-                        <button className="px-4 py-2 bg-gray-100 rounded-lg text-gray-600 text-xs font-bold hover:bg-gray-200 transition-all">Suspend</button>
-                        <button className="px-4 py-2 bg-rose-50 rounded-lg text-rose-600 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all">Terminate</button>
+                        {service.status === 'SUSPENDED' ? (
+                           <button
+                              onClick={async () => {
+                                 await api.post(`/services/${service.id}/admin-action`, { action: 'unsuspend' });
+                                 fetchServices();
+                              }}
+                              className="px-4 py-2 bg-emerald-50 rounded-lg text-emerald-600 text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all"
+                           >
+                              Unsuspend
+                           </button>
+                        ) : (
+                           <button
+                              onClick={async () => {
+                                 if(!confirm('Suspend this service?')) return;
+                                 await api.post(`/services/${service.id}/admin-action`, { action: 'suspend' });
+                                 fetchServices();
+                              }}
+                              className="px-4 py-2 bg-gray-100 rounded-lg text-gray-600 text-xs font-bold hover:bg-gray-200 transition-all"
+                           >
+                              Suspend
+                           </button>
+                        )}
+                        <button
+                           onClick={async () => {
+                              if(!confirm('TERMINATE this service? This action is irreversible and will delete the VM/Server.')) return;
+                              await api.post(`/services/${service.id}/admin-action`, { action: 'terminate' });
+                              fetchServices();
+                           }}
+                           className="px-4 py-2 bg-rose-50 rounded-lg text-rose-600 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"
+                        >
+                           Terminate
+                        </button>
                      </div>
                   </div>
                </Card>

@@ -2,16 +2,29 @@ import { Response } from 'express';
 import prisma from '../../config/prisma.js';
 
 export const createOrder = async (req: any, res: Response) => {
-  const { productId } = req.body;
+  const { productId, billingCycle } = req.body;
   const userId = req.userId;
   try {
     const product = await prisma.product.findUnique({ where: { id: parseInt(productId as string) } });
     if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    let finalPrice = product.price;
+    const cycles = (product.billingCycles as any) || {};
+    if (billingCycle && cycles[billingCycle]) {
+        finalPrice = parseFloat(cycles[billingCycle]);
+    }
+
     const order = await prisma.order.create({
-      data: { userId, productId: product.id, total: product.price, status: 'PENDING' }
+      data: {
+          userId,
+          productId: product.id,
+          total: finalPrice,
+          billingCycle: billingCycle || 'monthly',
+          status: 'PENDING'
+      }
     });
     await prisma.invoice.create({
-      data: { userId, orderId: order.id, amount: product.price, status: 'UNPAID' }
+      data: { userId, orderId: order.id, amount: finalPrice, status: 'UNPAID' }
     });
     res.status(201).json(order);
   } catch (error) {
