@@ -115,6 +115,17 @@ const performTest = async (type: string, url: string, apiKey: string, secret?: s
                 timeout: 5000,
                 httpsAgent: agent
             });
+
+            // Test Client API (Secret) if provided
+            if (secret && secret.startsWith('ptlc_')) {
+                await axios.get(`${baseUrl}/api/client`, {
+                    headers: { Authorization: `Bearer ${secret}`, Accept: 'application/json' },
+                    timeout: 5000,
+                    httpsAgent: agent
+                });
+            } else if (secret && secret.length > 0) {
+                 throw new Error('La clé secrète doit être une "Client API Key" commençant par ptlc_');
+            }
         } catch (err: any) {
             if (err.response?.status === 401) throw new Error('Clé API invalide (401)');
             if (err.response?.status === 403) throw new Error('Action non autorisée (403) - Vérifiez les permissions de la clé API (Nests, Users, Servers)');
