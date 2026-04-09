@@ -115,11 +115,24 @@ const Infrastructure = () => {
                  required
                />
 
+               <div className="space-y-1">
+                  <Input
+                    label={form.type === 'PROXMOX' ? "API Secret" : "Account (Client) API Key"}
+                    type="password"
+                    placeholder={form.type === 'PROXMOX' ? "xxxxxxxx-xxxx-..." : "ptlc_xxxxxxxx"}
+                    value={form.secret}
+                    onChange={e => setForm({...form, secret: e.target.value})}
+                    required={form.type === 'PROXMOX'}
+                  />
+                  {form.type === 'PTERODACTYL' && (
+                     <p className="text-[10px] text-blue-500 font-bold ml-1">
+                        Requis pour les actions Start/Stop/Reboot. Créez une "Account API Key" dans les paramètres de votre compte Pterodactyl.
+                     </p>
+                  )}
+               </div>
+
                {form.type === 'PROXMOX' && (
-                  <>
-                     <Input label="API Secret" type="password" placeholder="xxxxxxxx-xxxx-..." value={form.secret} onChange={e => setForm({...form, secret: e.target.value})} required />
-                     <Input label="Default Node (ID)" placeholder="e.g. pve" value={form.node} onChange={e => setForm({...form, node: e.target.value})} required />
-                  </>
+                  <Input label="Default Node (ID)" placeholder="e.g. pve" value={form.node} onChange={e => setForm({...form, node: e.target.value})} required />
                )}
 
                <div className="md:col-span-2 flex justify-between items-center pt-4 border-t border-gray-100">

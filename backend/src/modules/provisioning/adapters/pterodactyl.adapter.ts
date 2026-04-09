@@ -14,9 +14,10 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     return normalized;
   }
 
-  private async getAuthHeader(server: any) {
+  private async getAuthHeader(server: any, isClientApi: boolean = false) {
+    const key = (isClientApi && server.secret) ? server.secret : server.apiKey;
     return {
-      Authorization: `Bearer ${server.apiKey}`,
+      Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
@@ -109,16 +110,19 @@ export class PterodactylAdapter implements ProvisioningAdapter {
         // Fetch it now to get the IP:PORT
         let connectionInfo = "Pending allocation...";
         try {
+            // Wait 4s for panel to process allocation assignment
+            await new Promise(r => setTimeout(r, 4000));
             const detailRes = await axios.get(`${baseUrl}/api/application/servers/${serverData.id}?include=allocations`, {
                 headers: await this.getAuthHeader(server),
                 httpsAgent: this.agent
             });
-            const primary = detailRes.data.attributes.relationships?.allocations?.data.find((a: any) => a.attributes.is_default);
-            if (primary) {
+            const allocations = detailRes.data.attributes.relationships?.allocations?.data || [];
+            if (allocations.length > 0) {
+                const primary = allocations.find((a: any) => a.attributes.is_default) || allocations[0];
                 connectionInfo = `${primary.attributes.ip}:${primary.attributes.port}`;
             }
         } catch (err) {
-            console.error('Failed to fetch allocation details', err);
+            console.error('Failed to fetch allocation details during creation', err);
         }
 
         const result = {
@@ -179,7 +183,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     const baseUrl = this.getNormalizedUrl(server.url);
     const id = this.getInternalId(externalId);
 
-    // Pterodactyl Client API is usually at /api/client/servers/<identifier>/power
+    // Pterodactyl Client API requires the identifier (short UUID)
     let identifier = id;
     try {
         const data = JSON.parse(externalId);
@@ -187,21 +191,35 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     } catch {}
 
     const signal = action === 'stop' ? 'stop' : action === 'start' ? 'start' : 'restart';
+    const headers = await this.getAuthHeader(server, true);
+
+    // Safety check: Don't allow Application Keys (ptla_) on Client endpoints
+    if (headers.Authorization.startsWith('Bearer ptla_')) {
+        throw new Error('ACTION REFUSÉE : Vous tentez d\'utiliser une clé Application (ptla_) pour une action Client. Veuillez générer une clé API de COMPTE (Account API Key) sur votre panel Pterodactyl et la coller dans le champ "Secret" de la configuration du serveur dans l\'admin HostDash.');
+    }
 
     try {
+        console.log(`Sending power signal ${signal} to Pterodactyl server ${identifier} at ${baseUrl}`);
         await axios.post(`${baseUrl}/api/client/servers/${identifier}/power`, { signal }, {
-          headers: await this.getAuthHeader(server),
+          headers,
           httpsAgent: this.agent
         });
     } catch (err: any) {
+        console.error('Pterodactyl Power Error Detail:', err.response?.data || err.message);
         // If 'stop' failed, try 'kill' as fallback
         if (action === 'stop') {
-            await axios.post(`${baseUrl}/api/client/servers/${identifier}/power`, { signal: 'kill' }, {
-                headers: await this.getAuthHeader(server),
-                httpsAgent: this.agent
-            });
+            try {
+                await axios.post(`${baseUrl}/api/client/servers/${identifier}/power`, { signal: 'kill' }, {
+                    headers,
+                    httpsAgent: this.agent
+                });
+            } catch (killErr: any) {
+                const msg = killErr.response?.data?.errors?.[0]?.detail || killErr.message;
+                throw new Error(`Pterodactyl Kill Failed: ${msg}`);
+            }
         } else {
-            throw err;
+            const msg = err.response?.data?.errors?.[0]?.detail || err.message;
+            throw new Error(`Pterodactyl Power Error: ${msg}`);
         }
     }
     return true;
@@ -210,22 +228,62 @@ export class PterodactylAdapter implements ProvisioningAdapter {
   async getLatestDetails(externalId: string, server: any): Promise<any> {
     const baseUrl = this.getNormalizedUrl(server.url);
     const id = this.getInternalId(externalId);
-    const headers = await this.getAuthHeader(server);
 
-    const res = await axios.get(`${baseUrl}/api/application/servers/${id}?include=allocations`, {
-        headers,
-        httpsAgent: this.agent
-    });
+    console.log(`Refreshing Pterodactyl server details for ID ${id} at ${baseUrl}`);
 
-    const serverData = res.data.attributes;
-    const primary = serverData.relationships?.allocations?.data.find((a: any) => a.attributes.is_default);
+    // Try Application API first (for connection/IP)
+    let serverData = null;
+    let allocations = [];
+
+    try {
+        const res = await axios.get(`${baseUrl}/api/application/servers/${id}?include=allocations`, {
+            headers: await this.getAuthHeader(server),
+            httpsAgent: this.agent
+        });
+        serverData = res.data.attributes;
+        allocations = serverData.relationships?.allocations?.data || [];
+    } catch (err) {
+        // Fallback to Client API if possible (if id is the identifier)
+        let identifier = id;
+        try {
+            const data = JSON.parse(externalId);
+            identifier = data.identifier || id;
+        } catch {}
+
+        if (server.secret) {
+            const res = await axios.get(`${baseUrl}/api/client/servers/${identifier}`, {
+                headers: await this.getAuthHeader(server, true),
+                httpsAgent: this.agent
+            });
+            serverData = res.data.attributes;
+            // Client API has slightly different structure for allocations
+            const main = serverData.relationships?.allocations?.data?.[0];
+            if (main) allocations = [main];
+        } else {
+            throw err;
+        }
+    }
+
+    let connectionInfo = "Pending allocation...";
+    if (Array.isArray(allocations) && allocations.length > 0) {
+        const primary = allocations.find((a: any) => a.attributes.is_default) || allocations[0];
+        connectionInfo = `${primary.attributes.ip}:${primary.attributes.port}`;
+    }
+
+    // Capture the existing password from externalId if present, to avoid losing it during refresh
+    let existingPassword = 'Existing account password';
+    try {
+        const data = JSON.parse(externalId);
+        existingPassword = data.ptero_password || existingPassword;
+    } catch {}
 
     return {
         id: serverData.id,
         uuid: serverData.uuid,
         identifier: serverData.identifier,
-        connection: primary ? `${primary.attributes.ip}:${primary.attributes.port}` : "Pending allocation...",
-        panel_url: baseUrl
+        connection: connectionInfo,
+        panel_url: baseUrl,
+        ptero_password: existingPassword
     };
   }
 }
