@@ -231,6 +231,12 @@ export class PterodactylAdapter implements ProvisioningAdapter {
 
     console.log(`Refreshing Pterodactyl server details for ID ${id} at ${baseUrl}`);
 
+    let identifier = id;
+    try {
+        const data = JSON.parse(externalId);
+        identifier = data.identifier || id;
+    } catch {}
+
     // Try Application API first (for connection/IP)
     let serverData = null;
     let allocations = [];
@@ -243,24 +249,23 @@ export class PterodactylAdapter implements ProvisioningAdapter {
         serverData = res.data.attributes;
         allocations = serverData.relationships?.allocations?.data || [];
     } catch (err) {
-        // Fallback to Client API if possible (if id is the identifier)
-        let identifier = id;
-        try {
-            const data = JSON.parse(externalId);
-            identifier = data.identifier || id;
-        } catch {}
+        console.warn('Application API failed, trying Client API fallback for refresh...');
+    }
 
-        if (server.secret) {
+    // Fallback to Client API if Application API failed or returned no allocations
+    if (allocations.length === 0 && server.secret) {
+        try {
             const res = await axios.get(`${baseUrl}/api/client/servers/${identifier}`, {
                 headers: await this.getAuthHeader(server, true),
                 httpsAgent: this.agent
             });
             serverData = res.data.attributes;
-            // Client API has slightly different structure for allocations
+            // Client API allocation structure
             const main = serverData.relationships?.allocations?.data?.[0];
             if (main) allocations = [main];
-        } else {
-            throw err;
+            console.log('Successfully retrieved allocation via Client API fallback');
+        } catch (clientErr: any) {
+            console.error('Client API fallback refresh also failed:', clientErr.message);
         }
     }
 

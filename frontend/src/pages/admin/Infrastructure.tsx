@@ -117,16 +117,16 @@ const Infrastructure = () => {
 
                <div className="space-y-1">
                   <Input
-                    label={form.type === 'PROXMOX' ? "API Secret" : "Account (Client) API Key"}
+                    label={form.type === 'PROXMOX' ? "API Secret" : "Account (Client) API Key (Secret)"}
                     type="password"
                     placeholder={form.type === 'PROXMOX' ? "xxxxxxxx-xxxx-..." : "ptlc_xxxxxxxx"}
                     value={form.secret}
                     onChange={e => setForm({...form, secret: e.target.value})}
-                    required={form.type === 'PROXMOX'}
+                    required
                   />
                   {form.type === 'PTERODACTYL' && (
-                     <p className="text-[10px] text-blue-500 font-bold ml-1">
-                        Requis pour les actions Start/Stop/Reboot. Créez une "Account API Key" dans les paramètres de votre compte Pterodactyl.
+                     <p className="text-[10px] text-rose-500 font-black ml-1 uppercase">
+                        ⚠️ OBLIGATOIRE : Créez une "Account API Key" sur votre profil Pterodactyl (pas l'admin) pour autoriser Start/Stop/Reboot.
                      </p>
                   )}
                </div>
