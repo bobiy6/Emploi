@@ -38,12 +38,27 @@ export const payInvoice = async (req: any, res: Response) => {
     if (product) {
         let createdService: any = null;
         try {
+            const cycle = invoice.order?.billingCycle || 'monthly';
             const nextDueDate = new Date();
-            nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+
+            if (cycle === '24h') nextDueDate.setHours(nextDueDate.getHours() + 24);
+            else if (cycle === 'monthly') nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+            else if (cycle === '6months') nextDueDate.setMonth(nextDueDate.getMonth() + 6);
+            else if (cycle === 'yearly') nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+            else nextDueDate.setMonth(nextDueDate.getMonth() + 1); // Default
+
             const moduleName = product.type === 'VPS' ? 'proxmox' : 'pterodactyl';
 
             createdService = await prisma.service.create({
-                data: { userId, productId: product.id, status: 'SUSPENDED', module: moduleName, config: product.config || {}, nextDueDate }
+                data: {
+                    userId,
+                    productId: product.id,
+                    status: 'SUSPENDED',
+                    module: moduleName,
+                    config: product.config || {},
+                    billingCycle: cycle,
+                    nextDueDate
+                }
             });
 
             const { getAdapter, getBestServer } = await import('../provisioning/provisioning.service.js');

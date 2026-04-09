@@ -101,6 +101,45 @@ export const refreshServiceDetails = async (req: any, res: Response) => {
     }
 };
 
+export const adminServiceAction = async (req: any, res: Response) => {
+    const { id } = req.params;
+    const { action } = req.body; // 'suspend', 'unsuspend', 'terminate'
+    try {
+        const service = await prisma.service.findUnique({
+            where: { id: parseInt(id) },
+            include: { product: true }
+        });
+        if (!service) return res.status(404).json({ message: 'Service not found' });
+
+        const { getAdapter } = await import('../provisioning/provisioning.service.js');
+        const adapter = getAdapter(service.module);
+
+        const serviceConfig = (service.config as any) || {};
+        const serverId = serviceConfig.serverId;
+        const server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
+
+        if (adapter && service.externalId && server) {
+            if (action === 'suspend') {
+                await adapter.suspend(service.externalId, server);
+                await prisma.service.update({ where: { id: service.id }, data: { status: 'SUSPENDED' } });
+            } else if (action === 'terminate') {
+                await adapter.terminate(service.externalId, server);
+                await prisma.service.update({ where: { id: service.id }, data: { status: 'TERMINATED' } });
+            } else if (action === 'unsuspend') {
+                try {
+                   await adapter.powerAction(service.externalId, 'start', server);
+                } catch {}
+                await prisma.service.update({ where: { id: service.id }, data: { status: 'ACTIVE' } });
+            }
+        }
+
+        res.json({ message: `Action ${action} completed successfully` });
+    } catch (error: any) {
+        console.error(`Admin Action ${action} Error:`, error.response?.data || error.message);
+        res.status(500).json({ message: `Failed to ${action} service`, error: error.message });
+    }
+};
+
 export const getAllServices = async (req: any, res: Response) => {
   try {
     const services = await prisma.service.findMany({

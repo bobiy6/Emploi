@@ -2,10 +2,18 @@ import { Request, Response } from 'express';
 import prisma from '../../config/prisma.js';
 
 export const createProduct = async (req: Request, res: Response) => {
-  const { name, description, price, type, config, categoryId } = req.body;
+  const { name, description, price, type, config, billingCycles, categoryId } = req.body;
   try {
     const product = await prisma.product.create({
-      data: { name, description, price, type, config, categoryId: parseInt(categoryId as string) }
+      data: {
+          name,
+          description,
+          price: parseFloat(price as string),
+          type,
+          config,
+          billingCycles,
+          categoryId: parseInt(categoryId as string)
+      }
     });
     res.status(201).json(product);
   } catch (error) {
@@ -38,11 +46,19 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, description, price, type, config, categoryId } = req.body;
+  const { name, description, price, type, config, billingCycles, categoryId } = req.body;
   try {
     const product = await prisma.product.update({
       where: { id: parseInt(id as string) },
-      data: { name, description, price, type, config, categoryId: parseInt(categoryId as string) }
+      data: {
+          name,
+          description,
+          price: parseFloat(price as string),
+          type,
+          config,
+          billingCycles,
+          categoryId: parseInt(categoryId as string)
+      }
     });
     res.json(product);
   } catch (error) {

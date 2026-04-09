@@ -15,6 +15,12 @@ const ProductCatalog = () => {
   const [price, setPrice] = useState('');
   const [type, setType] = useState('VPS');
   const [categoryId, setCategoryId] = useState('');
+  const [billingCycles, setBillingCycles] = useState<any>({
+    '24h': '',
+    'monthly': '',
+    '6months': '',
+    'yearly': ''
+  });
 
   // Game specific state
   const [pveServers, setPveServers] = useState<any[]>([]);
@@ -74,11 +80,19 @@ const ProductCatalog = () => {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Clean up empty cycles
+    const cycles: any = {};
+    Object.keys(billingCycles).forEach(key => {
+        if (billingCycles[key]) cycles[key] = parseFloat(billingCycles[key]);
+    });
+
     const payload = {
       name,
       price: parseFloat(price),
       type,
       categoryId: parseInt(categoryId),
+      billingCycles: cycles,
       config: type === 'VPS'
         ? { cpu: 2, ram: '4GB', disk: '40GB' }
         : {
@@ -112,6 +126,7 @@ const ProductCatalog = () => {
     setPrice('');
     setType('VPS');
     setCategoryId('');
+    setBillingCycles({ '24h': '', 'monthly': '', '6months': '', 'yearly': '' });
   };
 
   const handleEdit = (prod: any) => {
@@ -120,6 +135,14 @@ const ProductCatalog = () => {
     setPrice(prod.price.toString());
     setType(prod.type);
     setCategoryId(prod.categoryId.toString());
+    if (prod.billingCycles) {
+        setBillingCycles({
+            '24h': prod.billingCycles['24h'] || '',
+            'monthly': prod.billingCycles['monthly'] || '',
+            '6months': prod.billingCycles['6months'] || '',
+            'yearly': prod.billingCycles['yearly'] || ''
+        });
+    }
 
     if (prod.type === 'GAME' && prod.config) {
         const cfg = prod.config;
@@ -163,7 +186,18 @@ const ProductCatalog = () => {
             </h3>
             <form onSubmit={handleSaveProduct} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <Input label="Product Name" placeholder="e.g., VPS Premium XL" value={name} onChange={(e) => setName(e.target.value)} required />
-               <Input label="Price (€)" type="number" step="0.01" placeholder="9.99" value={price} onChange={(e) => setPrice(e.target.value)} required />
+               <Input label="Default Monthly Price (€)" type="number" step="0.01" placeholder="9.99" value={price} onChange={(e) => setPrice(e.target.value)} required />
+
+               <div className="md:col-span-2 p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
+                  <h4 className="font-bold text-gray-900 text-sm uppercase tracking-widest">Multi-Duration Pricing (Optional)</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                     <Input label="24 Hours (€)" type="number" step="0.01" placeholder="Free/1.00" value={billingCycles['24h']} onChange={e => setBillingCycles({...billingCycles, '24h': e.target.value})} />
+                     <Input label="1 Month (€)" type="number" step="0.01" placeholder="9.99" value={billingCycles['monthly']} onChange={e => setBillingCycles({...billingCycles, 'monthly': e.target.value})} />
+                     <Input label="6 Months (€)" type="number" step="0.01" placeholder="50.00" value={billingCycles['6months']} onChange={e => setBillingCycles({...billingCycles, '6months': e.target.value})} />
+                     <Input label="1 Year (€)" type="number" step="0.01" placeholder="90.00" value={billingCycles['yearly']} onChange={e => setBillingCycles({...billingCycles, 'yearly': e.target.value})} />
+                  </div>
+                  <p className="text-[10px] text-gray-400 italic">If a duration is left blank, it won't be available to customers.</p>
+               </div>
 
                <div className="space-y-1">
                   <label className="block text-sm font-medium text-gray-700 ml-1">Product Type</label>

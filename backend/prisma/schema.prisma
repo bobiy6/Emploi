@@ -70,29 +70,31 @@ model Category {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  price       Float
-  type        String   // 'VPS', 'GAME'
-  config      Json     // Store CPU, RAM, Disk etc.
-  categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id])
-  orders      Order[]
-  services    Service[]
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Float
+  type          String   // 'VPS', 'GAME'
+  config        Json     // Store CPU, RAM, Disk etc.
+  billingCycles Json?    // { '24h': 1.0, '1mo': 10.0, '6mo': 55.0, '1yr': 100.0 }
+  categoryId    Int
+  category      Category @relation(fields: [categoryId], references: [id])
+  orders        Order[]
+  services      Service[]
 }
 
 model Order {
-  id        Int         @id @default(autoincrement())
-  userId    Int
-  user      User        @relation(fields: [userId], references: [id])
-  productId Int
-  product   Product     @relation(fields: [productId], references: [id])
-  status    OrderStatus @default(PENDING)
-  total     Float
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  invoice   Invoice?
+  id           Int         @id @default(autoincrement())
+  userId       Int
+  user         User        @relation(fields: [userId], references: [id])
+  productId    Int
+  product      Product     @relation(fields: [productId], references: [id])
+  status       OrderStatus @default(PENDING)
+  total        Float
+  billingCycle String      @default("monthly")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  invoice      Invoice?
 }
 
 model Service {
@@ -105,6 +107,7 @@ model Service {
   module       String        // 'proxmox', 'pterodactyl'
   externalId   String?       // ID in the external system
   config       Json          // Custom config for this service instance
+  billingCycle String        @default("monthly")
   nextDueDate  DateTime
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
