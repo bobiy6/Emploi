@@ -5,7 +5,7 @@ export const getMyServices = async (req: any, res: Response) => {
   try {
     const services = await prisma.service.findMany({
       where: { userId: req.userId },
-      include: { product: true }
+      include: { product: true, user: { select: { email: true } } }
     });
     res.json(services);
   } catch (error) {
@@ -18,7 +18,7 @@ export const getServiceById = async (req: any, res: Response) => {
   try {
     const service = await prisma.service.findUnique({
       where: { id: parseInt(id as string) },
-      include: { product: true }
+      include: { product: true, user: { select: { email: true } } }
     });
     if (!service || service.userId !== req.userId) return res.status(404).json({ message: 'Service not found' });
     res.json(service);
@@ -58,7 +58,8 @@ export const powerAction = async (req: any, res: Response) => {
     res.json({ message: `Service ${action} successful` });
   } catch (error: any) {
     console.error('Power Action Error:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Error performing power action', error: error.message });
+    const msg = error.message || 'Error performing power action';
+    res.status(500).json({ message: msg });
   }
 };
 
