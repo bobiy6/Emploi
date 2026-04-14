@@ -64,10 +64,24 @@ export class ProxmoxAdapter implements ProvisioningAdapter {
   async powerAction(externalId: string, action: string, server: any): Promise<boolean> {
     const node = server.node || 'pve';
     const pxAction = action === 'stop' ? 'stop' : action === 'start' ? 'start' : 'reboot';
-    await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/${pxAction}`, {}, {
-      headers: await this.getAuthHeader(server),
-      httpsAgent: this.agent
-    });
+
+    try {
+        await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/${pxAction}`, {}, {
+          headers: await this.getAuthHeader(server),
+          httpsAgent: this.agent,
+          timeout: 10000
+        });
+    } catch (err: any) {
+        if (action === 'stop') {
+            // Try forced stop if graceful stop fails
+            await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/stop`, {}, {
+                headers: await this.getAuthHeader(server),
+                httpsAgent: this.agent
+            });
+        } else {
+            throw err;
+        }
+    }
     return true;
   }
 }
