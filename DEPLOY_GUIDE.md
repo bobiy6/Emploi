@@ -141,4 +141,8 @@ Après l'installation, utilisez ces identifiants pour vous connecter :
 - **Mot de passe** : `admin123`
 
 ---
-**Note Proxmox/Pterodactyl** : N'oubliez pas d'aller dans l'onglet **Infrastructure** de l'administration pour connecter vos serveurs physiques.
+**⚠️ NOTE CRITIQUE PTERODACTYL** :
+Pour que les boutons **Start / Stop / Reboot** fonctionnent :
+1. Allez dans l'administration HostDash > **Infrastructure**.
+2. Modifiez votre serveur Pterodactyl.
+3. Dans le champ **"Secret (Account API Key)"**, vous **DEVEZ** mettre une clé API de type **"Account"** (créée sur votre profil utilisateur Pterodactyl, pas dans l'admin). Sans cela, les actions de contrôle seront refusées par Pterodactyl.
