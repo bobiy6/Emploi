@@ -5,7 +5,9 @@ import { generateToken } from '../../middleware/auth.js';
 import { createLog } from '../../utils/logger.js';
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, name, isCompany, companyName, vatNumber } = req.body;
+  const { password, name, isCompany, companyName, vatNumber } = req.body;
+  const email = req.body.email?.toLowerCase().trim();
+
   try {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
@@ -35,7 +37,9 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const email = req.body.email?.toLowerCase().trim();
+  const { password } = req.body;
+
   try {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -95,7 +99,8 @@ export const getProfile = async (req: any, res: Response) => {
 };
 
 export const updateProfile = async (req: any, res: Response) => {
-  const { name, email, isCompany, companyName, vatNumber, address, password } = req.body;
+  const { name, isCompany, companyName, vatNumber, address, password } = req.body;
+  const email = req.body.email?.toLowerCase().trim();
   const updateData: any = { name, email, isCompany, companyName, vatNumber, address };
 
   try {
