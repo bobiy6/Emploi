@@ -14,7 +14,8 @@ export const getAllUsers = async (req: any, res: Response) => {
 };
 
 export const createAdminUser = async (req: any, res: Response) => {
-  const { email, password, name, role, permissions } = req.body;
+  const { password, name, role, permissions } = req.body;
+  const email = req.body.email?.toLowerCase().trim();
   const bcrypt = (await import('bcryptjs')).default;
 
   try {
@@ -36,7 +37,8 @@ export const createAdminUser = async (req: any, res: Response) => {
 
 export const updateUser = async (req: any, res: Response) => {
   const { id } = req.params;
-  const { name, email, role, permissions, isCompany, companyName, vatNumber, address, password } = req.body;
+  const { name, role, permissions, isCompany, companyName, vatNumber, address, password } = req.body;
+  const email = req.body.email?.toLowerCase().trim();
   const updateData: any = { name, email, role, permissions, isCompany, companyName, vatNumber, address };
 
   try {
