@@ -35,7 +35,11 @@ const Register = () => {
     console.log('[DEBUG] Registering with payload:', payload);
 
     try {
-      const res = await api.post('/auth/register', payload);
+      const res = await api({
+        method: 'POST',
+        url: '/auth/register',
+        data: payload
+      });
       login(res.data.token, res.data.user);
       navigate('/dashboard');
     } catch (err: any) {

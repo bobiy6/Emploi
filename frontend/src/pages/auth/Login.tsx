@@ -27,7 +27,11 @@ const Login = () => {
     console.log('[DEBUG] Logging in with payload:', payload);
 
     try {
-      const res = await api.post('/auth/login', payload);
+      const res = await api({
+        method: 'POST',
+        url: '/auth/login',
+        data: payload
+      });
       login(res.data.token, res.data.user);
 
       // Give state a moment to update
