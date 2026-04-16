@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { useAuth } from '../../hooks/useAuth';
 import api from '../../api';
 
 const Register = () => {
@@ -15,21 +16,27 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    try {
-      const res = await api.post('/auth/register', {
+
+    const payload = {
         name,
-        email,
+        email: email.toLowerCase().trim(),
         password,
         isCompany,
         companyName: isCompany ? companyName : null,
         vatNumber: isCompany ? vatNumber : null
-      });
-      localStorage.setItem('token', res.data.token);
+    };
+
+    console.log('[DEBUG] Registering with payload:', payload);
+
+    try {
+      const res = await api.post('/auth/register', payload);
+      login(res.data.token, res.data.user);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
