@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { useAuth } from '../../hooks/useAuth';
 import api from '../../api';
 
 const Login = () => {
@@ -11,15 +12,28 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    const payload = {
+        email: email.toLowerCase().trim(),
+        password
+    };
+
+    console.log('[DEBUG] Logging in with payload:', payload);
+
     try {
-      const res = await api.post('/auth/login', { email, password });
-      localStorage.setItem('token', res.data.token);
-      navigate(res.data.user.role === 'ADMIN' ? '/admin' : '/dashboard');
+      const res = await api.post('/auth/login', payload);
+      login(res.data.token, res.data.user);
+
+      // Give state a moment to update
+      setTimeout(() => {
+        navigate(res.data.user.role === 'ADMIN' || res.data.user.role === 'SUPPORT' ? '/admin' : '/dashboard');
+      }, 100);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
