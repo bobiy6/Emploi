@@ -126,9 +126,7 @@ export const adminServiceAction = async (req: any, res: Response) => {
                 await adapter.terminate(service.externalId, server);
                 await prisma.service.update({ where: { id: service.id }, data: { status: 'TERMINATED' } });
             } else if (action === 'unsuspend') {
-                try {
-                   await adapter.powerAction(service.externalId, 'start', server);
-                } catch {}
+                await adapter.unsuspend(service.externalId, server);
                 await prisma.service.update({ where: { id: service.id }, data: { status: 'ACTIVE' } });
             }
         }

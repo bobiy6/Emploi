@@ -1,4 +1,4 @@
-# HostDash - Simplified Hosting SaaS
+# Infralyonix - Simplified Hosting SaaS
 
 A modern, modular hosting management platform (WHMCS simplified) built with Node.js, Express, Prisma, PostgreSQL, and React.
 
@@ -27,10 +27,10 @@ A modern, modular hosting management platform (WHMCS simplified) built with Node
 To connect a Proxmox node in the Admin Infrastructure panel:
 1.  **In Proxmox**:
     - Go to **Datacenter > Permissions > API Tokens**.
-    - Click **Add**. Select a user (e.g., `root@pam`) and give it a Token ID (e.g., `hostdash`).
+    - Click **Add**. Select a user (e.g., `root@pam`) and give it a Token ID (e.g., `infralyonix`).
     - **IMPORTANT**: Uncheck "Privilege Separation" unless you know how to configure fine-grained ACLs.
-    - Copy the **Token ID** (e.g., `root@pam!hostdash`) and the **Secret**.
-2.  **In HostDash Admin**:
+    - Copy the **Token ID** (e.g., `root@pam!infralyonix`) and the **Secret**.
+2.  **In Infralyonix Admin**:
     - Go to `/admin/infrastructure`.
     - Click **Add Physical Server**.
     - **API URL**: `https://YOUR_PROXMOX_IP:8006/api2/json`
@@ -44,7 +44,7 @@ To connect a Pterodactyl Panel:
 1.  **In Pterodactyl**:
     - Go to **Admin Control Panel > Application API**.
     - Click **Create New**.
-    - Give it a description (e.g., `HostDash`).
+    - Give it a description (e.g., `Infralyonix`).
     - **IMPORTANT**: Select **Read & Write** for **ALL** of the following categories:
       - **Nodes**
       - **Servers**
@@ -52,7 +52,7 @@ To connect a Pterodactyl Panel:
       - **Locations**
       - **Nests**
     - Copy the **API Key** (starts with `ptla_`).
-2.  **In HostDash Admin**:
+2.  **In Infralyonix Admin**:
     - Go to `/admin/infrastructure`.
     - Click **Add Physical Server**.
     - **Server Type**: Pterodactyl.

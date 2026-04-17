@@ -37,7 +37,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
           // Create if not exists
           const splitName = name.trim().split(/\s+/);
           const firstName = splitName[0] || 'User';
-          const lastName = splitName.slice(1).join(' ') || 'HostDash';
+          const lastName = splitName.slice(1).join(' ') || 'Infralyonix';
 
           // Sanitize username: only a-z, A-Z, 0-9 and _ . - are usually allowed
           const sanitizedUsername = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.floor(100 + Math.random() * 900);
@@ -169,6 +169,16 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     return true;
   }
 
+  async unsuspend(externalId: string, server: any): Promise<boolean> {
+    const baseUrl = this.getNormalizedUrl(server.url);
+    const id = this.getInternalId(externalId);
+    await axios.post(`${baseUrl}/api/application/servers/${id}/unsuspend`, {}, {
+      headers: await this.getAuthHeader(server),
+      httpsAgent: this.agent
+    });
+    return true;
+  }
+
   async terminate(externalId: string, server: any): Promise<boolean> {
     const baseUrl = this.getNormalizedUrl(server.url);
     const id = this.getInternalId(externalId);
@@ -195,7 +205,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
 
     // Safety check: Don't allow Application Keys (ptla_) on Client endpoints
     if (headers.Authorization.startsWith('Bearer ptla_')) {
-        throw new Error('ACTION REFUSÉE : Vous tentez d\'utiliser une clé Application (ptla_) pour une action Client. Veuillez générer une clé API de COMPTE (Account API Key) sur votre panel Pterodactyl et la coller dans le champ "Secret" de la configuration du serveur dans l\'admin HostDash.');
+        throw new Error('ACTION REFUSÉE : Vous tentez d\'utiliser une clé Application (ptla_) pour une action Client. Veuillez générer une clé API de COMPTE (Account API Key) sur votre panel Pterodactyl et la coller dans le champ "Secret" de la configuration du serveur dans l\'admin Infralyonix.');
     }
 
     try {
