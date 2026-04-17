@@ -5,15 +5,16 @@ const prisma = new PrismaClient();
 
 async function main() {
   const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminEmail = 'admin@hostdash.com'.toLowerCase().trim();
 
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@hostdash.com' },
+    where: { email: adminEmail },
     update: {
       password: adminPassword, // Force password update during seed
       role: 'ADMIN'
     },
     create: {
-      email: 'admin@hostdash.com',
+      email: adminEmail,
       name: 'Administrator',
       password: adminPassword,
       role: 'ADMIN',

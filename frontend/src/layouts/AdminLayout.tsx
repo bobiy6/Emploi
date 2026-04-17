@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, FolderTree, ClipboardList, ShieldAlert, LifeBuoy, LogOut, Settings, BarChart3, HardDrive, Plus, Trash2, Edit, Search, UserCheck, Power, Terminal, Database } from 'lucide-react';
+import { LayoutDashboard, Users, User, ShoppingBag, FolderTree, ClipboardList, ShieldAlert, LifeBuoy, LogOut, Settings, BarChart3, HardDrive, Plus, Trash2, Edit, Search, UserCheck, Power, Terminal, Database } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Badge } from '../components/ui/Badge';
 import { useAuth } from '../hooks/useAuth';
