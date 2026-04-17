@@ -24,10 +24,12 @@ import LogViewer from './pages/admin/LogViewer';
 import DatabaseManager from './pages/admin/DatabaseManager';
 import { AdminGuard } from './components/AdminGuard';
 import { AuthGuard } from './components/AuthGuard';
+import { AuthProvider } from './hooks/useAuth';
 
 const App = () => {
   return (
     <BrowserRouter>
+      <AuthProvider>
       <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -59,6 +61,7 @@ const App = () => {
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Suspense>
+      </AuthProvider>
     </BrowserRouter>
   );
 };
