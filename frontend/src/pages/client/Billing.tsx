@@ -65,7 +65,7 @@ const Billing = () => {
     const user = invoice.user || {};
 
     doc.setFontSize(22);
-    doc.text('HostDash - Invoice', 20, 20);
+    doc.text('Infralyonix - Invoice', 20, 20);
     doc.setFontSize(10);
     doc.text(`Invoice ID: #INV-${invoice.id}`, 20, 30);
     doc.text(`Date: ${new Date(invoice.createdAt).toLocaleDateString()}`, 20, 35);

@@ -12,6 +12,7 @@ import supportRoutes from './modules/support/support.routes.js';
 import adminSettingsRoutes from './modules/admin/settings.routes.js';
 import infrastructureRoutes from './modules/admin/infrastructure.routes.js';
 import webhookRoutes from './webhook.js';
+import { startAutomation } from './services/automation.service.js';
 
 dotenv.config();
 
@@ -38,6 +39,9 @@ app.use('/api/admin/infrastructure', infrastructureRoutes);
 
 app.get('/health', (req, res) => { res.json({ status: 'ok' }); });
 
-app.listen(PORT, () => { console.log(`Server is running on port ${PORT}`); });
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    startAutomation();
+});
 
 export default app;

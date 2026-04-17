@@ -1,6 +1,6 @@
-# Guide d'Installation Complet - HostDash sur VPS OVH (Ubuntu 22.04)
+# Guide d'Installation Complet - Infralyonix sur VPS OVH (Ubuntu 22.04)
 
-Ce guide vous explique comment déployer HostDash sur un VPS OVH avec Ubuntu 22.04 LTS.
+Ce guide vous explique comment déployer Infralyonix sur un VPS OVH avec Ubuntu 22.04 LTS.
 
 ## 1. Mise à jour du système
 Connectez-vous en SSH à votre VPS et commencez par mettre à jour les paquets.
@@ -35,9 +35,9 @@ psql
 ```
 Dans l'interface psql :
 ```sql
-CREATE DATABASE hostdash;
-CREATE USER hostdashuser WITH PASSWORD 'VOTRE_MOT_DE_PASSE_SECURISE';
-GRANT ALL PRIVILEGES ON DATABASE hostdash TO hostdashuser;
+CREATE DATABASE infralyonix;
+CREATE USER infralyonixuser WITH PASSWORD 'VOTRE_MOT_DE_PASSE_SECURISE';
+GRANT ALL PRIVILEGES ON DATABASE infralyonix TO infralyonixuser;
 \q
 exit
 ```
@@ -47,9 +47,9 @@ exit
 ### Clonage
 ```bash
 cd /var/www
-sudo git clone https://github.com/VOTRE_DEPOT/hostdash.git
-sudo chown -R $USER:$USER /var/www/hostdash
-cd /var/www/hostdash
+sudo git clone https://github.com/VOTRE_DEPOT/infralyonix.git
+sudo chown -R $USER:$USER /var/www/infralyonix
+cd /var/www/infralyonix
 ```
 
 ### Installation du Backend
@@ -60,7 +60,7 @@ cp .env.example .env
 ```
 Éditez le fichier `.env` : `nano .env`
 ```env
-DATABASE_URL="postgresql://hostdashuser:VOTRE_MOT_DE_PASSE_SECURISE@localhost:5432/hostdash?schema=public"
+DATABASE_URL="postgresql://infralyonixuser:VOTRE_MOT_DE_PASSE_SECURISE@localhost:5432/infralyonix?schema=public"
 JWT_SECRET="générer_une_clé_aléatoire_ici"
 PORT=5000
 ```
@@ -90,14 +90,14 @@ npm run build
 ```bash
 sudo npm install -g pm2
 cd ../backend
-pm2 start dist/index.js --name hostdash-api
+pm2 start dist/index.js --name infralyonix-api
 pm2 save
 pm2 startup
 ```
 
 ## 6. Configuration de Nginx (Reverse Proxy & Static Files)
 ```bash
-sudo nano /etc/nginx/sites-available/hostdash
+sudo nano /etc/nginx/sites-available/infralyonix
 ```
 Collez cette configuration (remplacez `votre-domaine.com`) :
 ```nginx
@@ -107,7 +107,7 @@ server {
 
     # Frontend (Fichiers Statiques)
     location / {
-        root /var/www/hostdash/frontend/dist;
+        root /var/www/infralyonix/frontend/dist;
         index index.html;
         try_files $uri $uri/ /index.html;
     }
@@ -125,7 +125,7 @@ server {
 ```
 Activez le site :
 ```bash
-sudo ln -s /etc/nginx/sites-available/hostdash /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/infralyonix /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 ```
@@ -137,12 +137,12 @@ sudo certbot --nginx -d votre-domaine.com
 
 ## 8. Accès Admin par défaut
 Après l'installation, utilisez ces identifiants pour vous connecter :
-- **Email** : `admin@hostdash.com`
+- **Email** : `admin@infralyonix.com`
 - **Mot de passe** : `admin123`
 
 ---
 **⚠️ NOTE CRITIQUE PTERODACTYL** :
 Pour que les boutons **Start / Stop / Reboot** fonctionnent :
-1. Allez dans l'administration HostDash > **Infrastructure**.
+1. Allez dans l'administration Infralyonix > **Infrastructure**.
 2. Modifiez votre serveur Pterodactyl.
 3. Dans le champ **"Secret (Account API Key)"**, vous **DEVEZ** mettre une clé API de type **"Account"** (créée sur votre profil utilisateur Pterodactyl, pas dans l'admin). Sans cela, les actions de contrôle seront refusées par Pterodactyl.

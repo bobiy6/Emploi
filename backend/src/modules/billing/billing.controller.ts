@@ -43,6 +43,7 @@ export const payInvoice = async (req: any, res: Response) => {
 
             if (cycle === '24h') nextDueDate.setHours(nextDueDate.getHours() + 24);
             else if (cycle === 'monthly') nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+            else if (cycle === '3months') nextDueDate.setMonth(nextDueDate.getMonth() + 3);
             else if (cycle === '6months') nextDueDate.setMonth(nextDueDate.getMonth() + 6);
             else if (cycle === 'yearly') nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
             else nextDueDate.setMonth(nextDueDate.getMonth() + 1); // Default

@@ -109,7 +109,7 @@ const Infrastructure = () => {
 
                <Input
                  label={form.type === 'PROXMOX' ? "API Token ID" : "Application API Key"}
-                 placeholder={form.type === 'PROXMOX' ? "root@pam!hostdash" : "ptla_xxxxxxxx"}
+                 placeholder={form.type === 'PROXMOX' ? "root@pam!infralyonix" : "ptla_xxxxxxxx"}
                  value={form.apiKey}
                  onChange={e => setForm({...form, apiKey: e.target.value})}
                  required

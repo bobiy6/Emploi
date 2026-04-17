@@ -61,7 +61,7 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
              <Server className="text-white w-6 h-6" />
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            HostDash
+            Infralyonix
           </span>
         </div>
 

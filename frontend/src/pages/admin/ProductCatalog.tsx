@@ -18,6 +18,7 @@ const ProductCatalog = () => {
   const [billingCycles, setBillingCycles] = useState<any>({
     '24h': '',
     'monthly': '',
+    '3months': '',
     '6months': '',
     'yearly': ''
   });
@@ -126,7 +127,7 @@ const ProductCatalog = () => {
     setPrice('');
     setType('VPS');
     setCategoryId('');
-    setBillingCycles({ '24h': '', 'monthly': '', '6months': '', 'yearly': '' });
+    setBillingCycles({ '24h': '', 'monthly': '', '3months': '', '6months': '', 'yearly': '' });
   };
 
   const handleEdit = (prod: any) => {
@@ -139,6 +140,7 @@ const ProductCatalog = () => {
         setBillingCycles({
             '24h': prod.billingCycles['24h'] || '',
             'monthly': prod.billingCycles['monthly'] || '',
+            '3months': prod.billingCycles['3months'] || '',
             '6months': prod.billingCycles['6months'] || '',
             'yearly': prod.billingCycles['yearly'] || ''
         });
@@ -190,9 +192,10 @@ const ProductCatalog = () => {
 
                <div className="md:col-span-2 p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
                   <h4 className="font-bold text-gray-900 text-sm uppercase tracking-widest">Multi-Duration Pricing (Optional)</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                      <Input label="24 Hours (€)" type="number" step="0.01" placeholder="Free/1.00" value={billingCycles['24h']} onChange={e => setBillingCycles({...billingCycles, '24h': e.target.value})} />
                      <Input label="1 Month (€)" type="number" step="0.01" placeholder="9.99" value={billingCycles['monthly']} onChange={e => setBillingCycles({...billingCycles, 'monthly': e.target.value})} />
+                     <Input label="3 Months (€)" type="number" step="0.01" placeholder="25.00" value={billingCycles['3months']} onChange={e => setBillingCycles({...billingCycles, '3months': e.target.value})} />
                      <Input label="6 Months (€)" type="number" step="0.01" placeholder="50.00" value={billingCycles['6months']} onChange={e => setBillingCycles({...billingCycles, '6months': e.target.value})} />
                      <Input label="1 Year (€)" type="number" step="0.01" placeholder="90.00" value={billingCycles['yearly']} onChange={e => setBillingCycles({...billingCycles, 'yearly': e.target.value})} />
                   </div>

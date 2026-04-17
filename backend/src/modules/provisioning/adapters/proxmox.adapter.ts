@@ -45,7 +45,18 @@ export class ProxmoxAdapter implements ProvisioningAdapter {
 
   async suspend(externalId: string, server: any): Promise<boolean> {
     const node = server.node || 'pve';
-    await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/suspend`, {}, {
+    // Suspend in PVE context often means 'pause' or 'hibernate'.
+    // Usually providers 'stop' the VM for suspension.
+    await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/stop`, {}, {
+      headers: await this.getAuthHeader(server),
+      httpsAgent: this.agent
+    });
+    return true;
+  }
+
+  async unsuspend(externalId: string, server: any): Promise<boolean> {
+    const node = server.node || 'pve';
+    await axios.post(`${server.url}/nodes/${node}/qemu/${externalId}/status/start`, {}, {
       headers: await this.getAuthHeader(server),
       httpsAgent: this.agent
     });
