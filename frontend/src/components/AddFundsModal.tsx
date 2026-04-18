@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import api from '../api';
 
 const AddFundsModal = ({ onClose, onRefresh }: any) => {
-  const stripe = useStripe();
-  const elements = useElements();
   const [amount, setAmount] = useState('10');
   const [loading, setLoading] = useState(false);
   const [creditConfig, setCreditConfig] = useState<any>({ min: 5, max: 500, pricePerCredit: 1.0 });
@@ -23,28 +20,14 @@ const AddFundsModal = ({ onClose, onRefresh }: any) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
-
     setLoading(true);
     try {
-      const { data } = await api.post('/billing/create-payment-intent', { amount: parseFloat(amount) });
-      const { clientSecret } = data;
-
-      const result = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement)!,
-        },
-      });
-
-      if (result.error) {
-        alert(result.error.message);
-      } else {
-        alert('Payment successful!');
-        onRefresh();
-        onClose();
+      const { data } = await api.post('/billing/create-checkout-session', { amount: parseFloat(amount) });
+      if (data.url) {
+         window.location.href = data.url;
       }
-    } catch (err) {
-      alert('Payment failed');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Payment redirection failed');
     } finally {
       setLoading(false);
     }
@@ -79,13 +62,15 @@ const AddFundsModal = ({ onClose, onRefresh }: any) => {
               </div>
            </div>
 
-           <div className="p-4 border-2 border-gray-100 rounded-2xl bg-white shadow-inner">
-              <CardElement options={{ style: { base: { fontSize: '16px' } } }} />
+           <div className="p-6 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+              <p className="text-[10px] text-gray-400 font-bold uppercase text-center leading-relaxed">
+                 You will be redirected to a secure Stripe payment page to complete your purchase.
+              </p>
            </div>
 
            <div className="flex gap-3 pt-4">
-              <Button variant="ghost" className="flex-1" onClick={onClose}>Cancel</Button>
-              <Button type="submit" className="flex-1" isLoading={loading}>Pay Now</Button>
+              <Button variant="ghost" className="flex-1 h-12" onClick={onClose}>Cancel</Button>
+              <Button type="submit" className="flex-1 h-12" isLoading={loading}>Pay & Rediriger</Button>
            </div>
         </form>
       </Card>

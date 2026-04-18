@@ -70,8 +70,20 @@ const Services = () => {
                     </p>
                  </div>
               </div>
-              <Badge variant="success" className="text-base px-4 py-1 uppercase">{selectedService.status}</Badge>
+              <Badge variant={selectedService.status === 'ACTIVE' ? 'success' : 'danger'} className="text-base px-4 py-1 uppercase">{selectedService.status}</Badge>
            </div>
+
+           {selectedService.status === 'SUSPENDED' && (
+              <div className="bg-rose-50 border-2 border-rose-100 p-6 rounded-3xl flex items-center gap-6 animate-pulse">
+                 <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center text-white">
+                    <ShieldAlert className="w-6 h-6" />
+                 </div>
+                 <div>
+                    <h4 className="font-black text-rose-900 uppercase tracking-widest text-xs">Service Expired & Suspended</h4>
+                    <p className="text-rose-700 text-sm font-medium">Please renew this service within 3 days to avoid permanent deletion of your data.</p>
+                 </div>
+              </div>
+           )}
 
            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">

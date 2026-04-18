@@ -30,10 +30,20 @@ async function checkExpiredServices() {
             try {
                 const adapter = getAdapter(service.module);
                 const config = (service.config as any) || {};
-                const server = await prisma.server.findUnique({ where: { id: parseInt(config.serverId) } });
 
-                if (adapter && server) {
-                    await adapter.suspend(service.externalId!, server);
+                let server = null;
+                if (config.serverId) {
+                    server = await prisma.server.findUnique({ where: { id: parseInt(config.serverId) } });
+                }
+
+                if (!server) {
+                    const { getBestServer } = await import('../modules/provisioning/provisioning.service.js');
+                    const product = await prisma.product.findUnique({ where: { id: service.productId } });
+                    if (product) server = await getBestServer(product.type);
+                }
+
+                if (adapter && server && service.externalId) {
+                    await adapter.suspend(service.externalId, server);
                 }
 
                 await prisma.service.update({
@@ -70,10 +80,20 @@ async function checkExpiredServices() {
             try {
                 const adapter = getAdapter(service.module);
                 const config = (service.config as any) || {};
-                const server = await prisma.server.findUnique({ where: { id: parseInt(config.serverId) } });
 
-                if (adapter && server) {
-                    await adapter.terminate(service.externalId!, server);
+                let server = null;
+                if (config.serverId) {
+                    server = await prisma.server.findUnique({ where: { id: parseInt(config.serverId) } });
+                }
+
+                if (!server) {
+                    const { getBestServer } = await import('../modules/provisioning/provisioning.service.js');
+                    const product = await prisma.product.findUnique({ where: { id: service.productId } });
+                    if (product) server = await getBestServer(product.type);
+                }
+
+                if (adapter && server && service.externalId) {
+                    await adapter.terminate(service.externalId, server);
                 }
 
                 await prisma.service.update({
