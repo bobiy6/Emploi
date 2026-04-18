@@ -16,19 +16,36 @@ router.get('/config', authMiddleware, async (req: any, res: any) => {
 });
 
 router.post('/create-payment-intent', authMiddleware, async (req: any, res: any) => {
-    const { amount } = req.body;
+    const { amount } = req.body; // 'amount' here is requested CREDITS
     const stripe = (await import('stripe')).default;
     const prisma = (await import('../../config/prisma.js')).default;
-    const settings = await prisma.systemSetting.findUnique({ where: { key: 'stripe' } });
-    const stripeConfig = settings?.value as any;
+
+    const [stripeSettings, creditSettings] = await Promise.all([
+        prisma.systemSetting.findUnique({ where: { key: 'stripe' } }),
+        prisma.systemSetting.findUnique({ where: { key: 'credit_config' } })
+    ]);
+
+    const stripeConfig = stripeSettings?.value as any;
+    const creditConfig = creditSettings?.value as any || { min: 5, max: 500, pricePerCredit: 1.0 };
 
     if (!stripeConfig?.secretKey) return res.status(500).json({ message: 'Stripe not configured' });
 
+    // Validation
+    const requestedCredits = parseFloat(amount);
+    if (requestedCredits < creditConfig.min || requestedCredits > creditConfig.max) {
+        return res.status(400).json({ message: `Amount must be between ${creditConfig.min} and ${creditConfig.max} credits.` });
+    }
+
+    const finalEurAmount = requestedCredits * creditConfig.pricePerCredit;
+
     const stripeInstance = new stripe(stripeConfig.secretKey);
     const intent = await stripeInstance.paymentIntents.create({
-        amount: Math.round(amount * 100),
+        amount: Math.round(finalEurAmount * 100),
         currency: 'eur',
-        metadata: { userId: req.userId }
+        metadata: {
+            userId: req.userId,
+            credits: requestedCredits.toString() // Store credits in metadata for webhook
+        }
     });
     res.json({ clientSecret: intent.client_secret });
 });

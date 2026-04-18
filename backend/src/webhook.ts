@@ -25,14 +25,18 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
     if (event.type === 'payment_intent.succeeded') {
         const paymentIntent = event.data.object;
         const userId = parseInt(paymentIntent.metadata.userId);
-        const amount = paymentIntent.amount / 100;
+
+        // Use the 'credits' metadata if available, fallback to EUR amount
+        const credits = paymentIntent.metadata.credits
+            ? parseFloat(paymentIntent.metadata.credits)
+            : (paymentIntent.amount / 100);
 
         await prisma.user.update({
             where: { id: userId },
-            data: { balance: { increment: amount } }
+            data: { balance: { increment: credits } }
         });
 
-        console.log(`[STRIPE] Added ${amount}€ to user ${userId}`);
+        console.log(`[STRIPE] Added ${credits} credits to user ${userId}`);
     }
 
     res.json({ received: true });
