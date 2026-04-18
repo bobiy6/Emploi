@@ -39,9 +39,21 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
         // In a production app, we would use a 'Transaction' model to track this.
         // For simplicity, we just log and update.
 
-        await prisma.user.update({
+        const user = await prisma.user.update({
             where: { id: userId },
             data: { balance: { increment: credits } }
+        });
+
+        const { sendEmail } = await import('./services/email.service.js');
+        await sendEmail({
+            to: user.email,
+            subject: 'Confirmation de votre rechargement de crédits',
+            templateName: 'CREDIT_REFILL_CONFIRMATION',
+            context: {
+                name: user.name,
+                amount: credits,
+                balance: user.balance
+            }
         });
 
         const { createLog } = await import('./utils/logger.js');

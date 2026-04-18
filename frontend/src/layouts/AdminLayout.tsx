@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, User, ShoppingBag, FolderTree, ClipboardList, ShieldAlert, LifeBuoy, LogOut, Settings, BarChart3, HardDrive, Plus, Trash2, Edit, Search, UserCheck, Power, Terminal, Database } from 'lucide-react';
+import { LayoutDashboard, Users, User, ShoppingBag, FolderTree, ClipboardList, ShieldAlert, LifeBuoy, LogOut, Settings, BarChart3, HardDrive, Plus, Trash2, Edit, Search, UserCheck, Power, Terminal, Database, Mail } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Badge } from '../components/ui/Badge';
 import { useAuth } from '../hooks/useAuth';
@@ -44,6 +44,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     { icon: HardDrive, label: 'Infrastructure', to: '/admin/infrastructure', hide: isSupport },
     { icon: Terminal, label: 'System Logs', to: '/admin/logs', hide: isSupport },
     { icon: Database, label: 'Database Access', to: '/admin/db', hide: isSupport },
+    {icon: Mail, label: 'Email Management', to: '/admin/email', hide: isSupport },
     { icon: Settings, label: 'Module Settings', to: '/admin/settings', hide: isSupport },
   ].filter(item => !item.hide);
 

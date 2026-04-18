@@ -11,8 +11,10 @@ import serviceRoutes from './modules/services/services.routes.js';
 import supportRoutes from './modules/support/support.routes.js';
 import adminSettingsRoutes from './modules/admin/settings.routes.js';
 import infrastructureRoutes from './modules/admin/infrastructure.routes.js';
+import emailAdminRoutes from './modules/admin/email.routes.js';
 import webhookRoutes from './webhook.js';
 import { startAutomation } from './services/automation.service.js';
+import './services/email.worker.js';
 
 dotenv.config();
 
@@ -36,6 +38,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
 app.use('/api/admin/infrastructure', infrastructureRoutes);
+app.use('/api/admin/email', emailAdminRoutes);
 
 app.get('/health', (req, res) => { res.json({ status: 'ok' }); });
 

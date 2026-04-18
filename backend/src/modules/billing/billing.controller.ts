@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../../config/prisma.js';
 import { createLog } from '../../utils/logger.js';
+import { sendEmail } from '../../services/email.service.js';
 
 export const getMyInvoices = async (req: any, res: Response) => {
   try {
@@ -110,6 +111,19 @@ export const payInvoice = async (req: any, res: Response) => {
               userId,
               serviceId: createdService.id,
               details: { externalId }
+            });
+
+            // Send Service Ready Email
+            await sendEmail({
+              to: invoice.user.email,
+              subject: `Votre service ${product.name} est prêt !`,
+              templateName: 'SERVICE_READY',
+              context: {
+                name: invoice.user.name,
+                productName: product.name,
+                serviceId: createdService.id,
+                externalId: externalId
+              }
             });
 
         } catch (provisionError: any) {

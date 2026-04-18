@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import prisma from '../../config/prisma.js';
 import { generateToken } from '../../middleware/auth.js';
 import { createLog } from '../../utils/logger.js';
+import { sendEmail } from '../../services/email.service.js';
+import crypto from 'crypto';
 
 export const register = async (req: Request, res: Response) => {
   const { password, name, isCompany, companyName, vatNumber } = req.body;
@@ -12,8 +14,28 @@ export const register = async (req: Request, res: Response) => {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name, isCompany, companyName, vatNumber },
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        isCompany,
+        companyName,
+        vatNumber,
+        emailVerificationToken: verificationToken
+      },
+    });
+
+    // Trigger Welcome & Verification Email
+    await sendEmail({
+      to: user.email,
+      subject: 'Bienvenue chez Infralyonix - Vérifiez votre email',
+      templateName: 'WELCOME_VERIFICATION',
+      context: {
+        name: user.name,
+        verificationUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
+      }
     });
 
     await createLog({
@@ -117,5 +139,18 @@ export const updateProfile = async (req: any, res: Response) => {
     res.json({ message: 'Profile updated', user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {
     res.status(500).json({ message: 'Update failed', error });
+  }
+};
+
+export const unsubscribe = async (req: Request, res: Response) => {
+  const { email } = req.body;
+  try {
+    await prisma.user.update({
+      where: { email },
+      data: { unsubscribed: true }
+    });
+    res.json({ message: 'Unsubscribed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Unsubscribe failed', error });
   }
 };
