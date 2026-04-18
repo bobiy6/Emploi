@@ -7,7 +7,8 @@ import api from '../../api';
 
 const ModuleSettings = () => {
   const [settings, setSettings] = useState<any>({
-    stripe: { publicKey: '', secretKey: '', webhookSecret: '' }
+    stripe: { publicKey: '', secretKey: '', webhookSecret: '' },
+    credit_config: { min: 5, max: 500, pricePerCredit: 1.0 }
   });
   const [loading, setLoading] = useState(false);
 
@@ -19,6 +20,7 @@ const ModuleSettings = () => {
     try {
       const res = await api.get('/admin/settings');
       if (res.data.stripe) setSettings(prev => ({ ...prev, stripe: res.data.stripe }));
+      if (res.data.credit_config) setSettings(prev => ({ ...prev, credit_config: res.data.credit_config }));
     } catch (err) {
       console.error(err);
     }
@@ -106,6 +108,50 @@ const ModuleSettings = () => {
                    isLoading={loading}
                  >
                     Test Connection
+                 </Button>
+              </div>
+           </div>
+        </Card>
+
+        {/* Credit Configuration */}
+        <Card className="p-8 border-none shadow-xl">
+           <div className="flex items-center gap-3 mb-8 pb-4 border-b border-gray-50">
+              <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                 <Settings className="w-5 h-5" />
+              </div>
+              <div>
+                 <h3 className="text-xl font-bold">Credit Purchasing</h3>
+                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Pricing & Limits</p>
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Input
+                label="Minimum Purchase (Credits)"
+                type="number"
+                value={settings.credit_config.min}
+                onChange={e => setSettings({...settings, credit_config: {...settings.credit_config, min: parseInt(e.target.value)}})}
+              />
+              <Input
+                label="Maximum Purchase (Credits)"
+                type="number"
+                value={settings.credit_config.max}
+                onChange={e => setSettings({...settings, credit_config: {...settings.credit_config, max: parseInt(e.target.value)}})}
+              />
+              <Input
+                label="Price per 1.00 Credit (€)"
+                type="number"
+                step="0.01"
+                value={settings.credit_config.pricePerCredit}
+                onChange={e => setSettings({...settings, credit_config: {...settings.credit_config, pricePerCredit: parseFloat(e.target.value)}})}
+              />
+              <div className="md:col-span-3 flex justify-end">
+                 <Button
+                   className="px-8 h-11 bg-rose-600 hover:bg-rose-700"
+                   onClick={() => handleUpdate('credit_config', settings.credit_config)}
+                   isLoading={loading}
+                 >
+                    Save Credit Config
                  </Button>
               </div>
            </div>
