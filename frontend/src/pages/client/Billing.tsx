@@ -34,6 +34,18 @@ const Billing = () => {
 
   useEffect(() => {
     fetchInvoices();
+
+    // Check for Stripe success/cancel params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success')) {
+       alert('Credits added successfully! Your balance will update shortly.');
+       // Clear params from URL
+       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    if (params.get('canceled')) {
+       alert('Payment canceled.');
+       window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   const fetchInvoices = async () => {
@@ -152,10 +164,8 @@ const Billing = () => {
         </div>
       </div>
 
-      {showAddFunds && stripePromise && (
-         <Elements stripe={stripePromise}>
-            <AddFundsModal onClose={() => setShowAddFunds(false)} onRefresh={fetchInvoices} />
-         </Elements>
+      {showAddFunds && (
+         <AddFundsModal onClose={() => setShowAddFunds(false)} onRefresh={fetchInvoices} />
       )}
 
       <div className="space-y-6">

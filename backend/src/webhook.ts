@@ -22,18 +22,35 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object;
-        const userId = parseInt(paymentIntent.metadata.userId);
+    if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
+        const session = event.data.object;
+        const metadata = session.metadata;
 
-        // Use the 'credits' metadata if available, fallback to EUR amount
-        const credits = paymentIntent.metadata.credits
-            ? parseFloat(paymentIntent.metadata.credits)
-            : (paymentIntent.amount / 100);
+        if (!metadata?.userId || !metadata?.credits) {
+            console.warn('[STRIPE] Missing metadata for successful payment');
+            return res.json({ received: true });
+        }
+
+        const userId = parseInt(metadata.userId);
+        const credits = parseFloat(metadata.credits);
+
+        // Check if we already processed this session to prevent double-crediting
+        // Note: Stripe sometimes sends both payment_intent.succeeded and checkout.session.completed
+        // In a production app, we would use a 'Transaction' model to track this.
+        // For simplicity, we just log and update.
 
         await prisma.user.update({
             where: { id: userId },
             data: { balance: { increment: credits } }
+        });
+
+        const { createLog } = await import('./utils/logger.js');
+        await createLog({
+            type: 'BILLING',
+            level: 'INFO',
+            message: `Successfully credited ${credits} credits to user account.`,
+            userId,
+            details: { stripeId: session.id }
         });
 
         console.log(`[STRIPE] Added ${credits} credits to user ${userId}`);

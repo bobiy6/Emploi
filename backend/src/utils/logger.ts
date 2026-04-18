@@ -1,7 +1,7 @@
 import prisma from '../config/prisma.js';
 
 export const createLog = async (data: {
-  type: 'API' | 'PROVISIONING' | 'SERVICE' | 'ERROR' | 'AUTH';
+  type: 'API' | 'PROVISIONING' | 'SERVICE' | 'ERROR' | 'AUTH' | 'BILLING';
   level: 'INFO' | 'WARN' | 'ERROR';
   message: string;
   details?: any;

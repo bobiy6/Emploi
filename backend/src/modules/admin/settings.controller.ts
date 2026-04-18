@@ -5,7 +5,14 @@ export const getSystemSettings = async (req: any, res: Response) => {
   try {
     const settings = await prisma.systemSetting.findMany();
     const settingsMap = settings.reduce((acc: any, curr) => {
-      acc[curr.key] = curr.value;
+      // Security: Don't leak secrets to the frontend unless it's a staff user
+      const isStaff = req.userRole === 'ADMIN' || req.userRole === 'SUPPORT';
+      if (!isStaff && curr.key === 'stripe') {
+          const val = curr.value as any;
+          acc[curr.key] = { publicKey: val.publicKey }; // Only leak public key
+      } else {
+          acc[curr.key] = curr.value;
+      }
       return acc;
     }, {});
     res.json(settingsMap);
