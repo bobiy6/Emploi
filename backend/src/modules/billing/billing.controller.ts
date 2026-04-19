@@ -33,6 +33,18 @@ export const payInvoice = async (req: any, res: Response) => {
       prisma.order.update({ where: { id: invoice.orderId! }, data: { status: 'PAID' } })
     ]);
 
+    // Send Invoice Paid Email
+    await sendEmail({
+      to: invoice.user.email,
+      subject: `Confirmation de paiement - Facture #${invoice.id}`,
+      templateName: 'INVOICE_PAID',
+      context: {
+        name: invoice.user.name,
+        invoiceId: invoice.id,
+        amount: invoice.amount
+      }
+    });
+
     await createLog({ type: 'SERVICE', level: 'INFO', message: `Invoice paid: #INV-${invoice.id}`, userId, details: { amount: invoice.amount } });
 
     const product = invoice.order?.product;

@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import VerifyEmail from './pages/auth/VerifyEmail';
 import Unsubscribe from './pages/auth/Unsubscribe';
 import ClientLayout from './layouts/ClientLayout';
 import Dashboard from './pages/client/Dashboard';
@@ -36,6 +37,7 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
 
           {/* Protected Routes */}

@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import prisma from '../../config/prisma.js';
+import { sendEmail } from '../../services/email.service.js';
 
 export const createOrder = async (req: any, res: Response) => {
   const { productId, billingCycle } = req.body;
@@ -23,9 +24,24 @@ export const createOrder = async (req: any, res: Response) => {
           status: 'PENDING'
       }
     });
-    await prisma.invoice.create({
-      data: { userId, orderId: order.id, amount: finalPrice, status: 'UNPAID' }
+    const invoice = await prisma.invoice.create({
+      data: { userId, orderId: order.id, amount: finalPrice, status: 'UNPAID' },
+      include: { user: true }
     });
+
+    // Send New Invoice Email
+    await sendEmail({
+      to: invoice.user.email,
+      subject: `Nouvelle facture #${invoice.id} - Infralyonix`,
+      templateName: 'NEW_INVOICE',
+      context: {
+        name: invoice.user.name,
+        invoiceId: invoice.id,
+        amount: invoice.amount,
+        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString() // 3 days
+      }
+    });
+
     res.status(201).json(order);
   } catch (error) {
     res.status(500).json({ message: 'Error creating order', error });

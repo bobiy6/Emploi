@@ -94,14 +94,24 @@ router.post('/campaigns/:id/send', adminMiddleware, async (req, res) => {
         });
     }
 
+    // Planification
+    let delay = 0;
+    if (campaign.scheduledAt) {
+        delay = Math.max(0, new Date(campaign.scheduledAt).getTime() - Date.now());
+    }
+
     // Queue emails
     for (const user of users) {
         await sendEmail({
             to: user.email,
             subject: template.subject, // Template engine handles context
             templateName: template.name,
-            context: { name: user.name },
-            isMarketing: true
+            context: {
+                name: user.name,
+                unsubscribeUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/unsubscribe?email=${encodeURIComponent(user.email)}`
+            },
+            isMarketing: true,
+            delay
         });
     }
 
