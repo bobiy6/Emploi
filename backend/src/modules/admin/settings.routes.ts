@@ -4,7 +4,7 @@ import { authMiddleware, adminMiddleware } from '../../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/', authMiddleware, adminMiddleware, getSystemSettings);
+router.get('/', authMiddleware, getSystemSettings);
 router.post('/', authMiddleware, adminMiddleware, updateSystemSetting);
 router.post('/test-stripe', authMiddleware, adminMiddleware, testStripeConnection);
 

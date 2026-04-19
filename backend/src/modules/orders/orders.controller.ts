@@ -30,17 +30,19 @@ export const createOrder = async (req: any, res: Response) => {
     });
 
     // Send New Invoice Email
-    sendEmail({
-      to: invoice.user.email,
-      subject: `Nouvelle facture #${invoice.id} - Infralyonix`,
-      templateName: 'NEW_INVOICE',
-      context: {
-        name: invoice.user.name,
-        invoiceId: invoice.id,
-        amount: invoice.amount,
-        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString() // 3 days
-      }
-    });
+    if (invoice.user?.email) {
+        sendEmail({
+          to: invoice.user.email,
+          subject: `Nouvelle facture #${invoice.id} - Infralyonix`,
+          templateName: 'NEW_INVOICE',
+          context: {
+            name: invoice.user.name,
+            invoiceId: invoice.id,
+            amount: invoice.amount,
+            dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString() // 3 days
+          }
+        });
+    }
 
     res.status(201).json(order);
   } catch (error) {

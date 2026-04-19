@@ -76,8 +76,12 @@ export const renderTemplate = async (templateName: string, context: any) => {
     });
 
     if (!template) {
-        // Fallback or error
-        throw new Error(`Email template ${templateName} not found`);
+        // Fallback for critical missing templates
+        console.error(`[CRITICAL] Email template ${templateName} not found in database.`);
+        return {
+            subject: `Information Infralyonix - ${templateName}`,
+            html: `<h1>Infralyonix</h1><p>Détails : ${JSON.stringify(context)}</p>`
+        };
     }
 
     const compiledTemplate = handlebars.compile(template.content);

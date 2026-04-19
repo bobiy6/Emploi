@@ -29,7 +29,9 @@ router.post('/create-checkout-session', authMiddleware, async (req: any, res: an
     const stripeConfig = stripeSettings?.value as any;
     const creditConfig = creditSettings?.value as any || { min: 5, max: 500, pricePerCredit: 1.0 };
 
-    if (!stripeConfig?.secretKey) return res.status(500).json({ message: 'Stripe not configured' });
+    if (!stripeConfig?.secretKey) {
+        return res.status(400).json({ message: 'Le système de paiement Stripe n\'est pas encore configuré par l\'administrateur.' });
+    }
 
     const requestedCredits = parseFloat(amount);
     if (isNaN(requestedCredits) || requestedCredits < creditConfig.min || requestedCredits > creditConfig.max) {
