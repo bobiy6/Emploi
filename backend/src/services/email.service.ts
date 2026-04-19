@@ -2,9 +2,7 @@ import nodemailer from 'nodemailer';
 import handlebars from 'handlebars';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../config/prisma.js';
 const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
     maxRetriesPerRequest: null,
     connectTimeout: 5000,

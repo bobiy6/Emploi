@@ -1,9 +1,8 @@
 import { Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { getTransporter, renderTemplate, EmailOptions } from './email.service.js';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../config/prisma.js';
+import { createLog } from '../utils/logger.js';
 const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
     maxRetriesPerRequest: null,
 });
@@ -29,7 +28,7 @@ export const emailWorker = new Worker(
             const smtpSetting = await prisma.systemSetting.findUnique({
                 where: { key: 'smtp_config' }
             });
-            const from = (smtpSetting?.value as any)?.from || 'noreply@infralyonix.com';
+            const from = (smtpSetting?.value as any)?.from || 'Infralyonix <noreply@infralyonix.com>';
 
             await transporter.sendMail({
                 from,
@@ -38,9 +37,22 @@ export const emailWorker = new Worker(
                 html,
             });
 
+            await createLog({
+                type: 'API',
+                level: 'INFO',
+                message: `Email sent to ${to} [${templateName}]`,
+                details: { subject, to, templateName }
+            });
+
             console.log(`Email sent successfully to ${to} [Template: ${templateName}]`);
-        } catch (error) {
+        } catch (error: any) {
             console.error(`Failed to send email to ${to}:`, error);
+            await createLog({
+                type: 'ERROR',
+                level: 'ERROR',
+                message: `Failed to send email to ${to} [${templateName}]`,
+                details: { error: error.message }
+            });
             throw error;
         }
     },

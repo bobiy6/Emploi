@@ -7,6 +7,7 @@ const EmailManager = () => {
     const [smtp, setSmtp] = useState({ host: '', port: 587, user: '', pass: '', from: '', secure: false });
     const [templates, setTemplates] = useState([]);
     const [campaigns, setCampaigns] = useState([]);
+    const [emailLogs, setEmailLogs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [testResult, setTestResult] = useState(null);
     const [showCampaignModal, setShowCampaignModal] = useState(false);
@@ -29,6 +30,9 @@ const EmailManager = () => {
             } else if (activeTab === 'campaigns') {
                 const res = await api.get('/admin/email/campaigns');
                 setCampaigns(res.data);
+            } else if (activeTab === 'logs') {
+                const res = await api.get('/admin/email/logs');
+                setEmailLogs(res.data);
             }
         } catch (err) {
             console.error(err);
@@ -72,6 +76,16 @@ const EmailManager = () => {
         }
     };
 
+    const syncTemplates = async () => {
+        try {
+            await api.post('/admin/email/templates/sync');
+            alert('Templates synchronisés');
+            if (activeTab === 'templates') fetchData();
+        } catch (err) {
+            alert('Échec de la synchronisation');
+        }
+    };
+
     const sendCampaign = async (id: number) => {
         try {
             await api.post(`/admin/email/campaigns/${id}/send`);
@@ -95,11 +109,13 @@ const EmailManager = () => {
     };
 
     const testConnection = async () => {
+        const testEmail = prompt("Entrez une adresse email pour envoyer un email de test (laisser vide pour tester uniquement la connexion) :");
+
         setLoading(true);
         setTestResult(null);
         try {
-            await api.post('/admin/email/settings/test');
-            setTestResult({ success: true, message: 'Connection successful!' });
+            await api.post('/admin/email/settings/test', { testEmail });
+            setTestResult({ success: true, message: testEmail ? `Connexion réussie et email envoyé à ${testEmail}` : 'Connexion réussie !' });
         } catch (err: any) {
             setTestResult({ success: false, message: err.response?.data?.error || 'Connection failed' });
         } finally {
@@ -132,6 +148,12 @@ const EmailManager = () => {
                         className={`px-4 py-2 rounded-md transition ${activeTab === 'campaigns' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
                     >
                         Campagnes
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('logs')}
+                        className={`px-4 py-2 rounded-md transition ${activeTab === 'logs' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                    >
+                        Historique
                     </button>
                 </div>
             </div>
@@ -204,7 +226,13 @@ const EmailManager = () => {
 
             {activeTab === 'templates' && (
                 <div className="space-y-4">
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={syncTemplates}
+                            className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                            Réinitialiser les défauts
+                        </button>
                         <button
                             onClick={() => { setEditingTemplate({ name: '', subject: '', content: '', type: 'TRANSACTIONAL' }); setShowTemplateModal(true); }}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
@@ -240,6 +268,35 @@ const EmailManager = () => {
                             </div>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {activeTab === 'logs' && (
+                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="bg-slate-900 text-slate-400 text-sm uppercase">
+                                <th className="px-6 py-4 font-semibold">Date</th>
+                                <th className="px-6 py-4 font-semibold">Destinataire</th>
+                                <th className="px-6 py-4 font-semibold">Message</th>
+                                <th className="px-6 py-4 font-semibold">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700">
+                            {emailLogs.map((l: any) => (
+                                <tr key={l.id} className="hover:bg-slate-700/30 transition text-slate-300">
+                                    <td className="px-6 py-4 text-xs">{new Date(l.createdAt).toLocaleString()}</td>
+                                    <td className="px-6 py-4 text-sm font-medium text-white">{l.details?.to || 'Inconnu'}</td>
+                                    <td className="px-6 py-4 text-sm">{l.message}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${l.level === 'INFO' ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                                            {l.level}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             )}
 
