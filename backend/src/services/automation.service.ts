@@ -34,7 +34,7 @@ async function checkUnpaidInvoices() {
 
         for (const invoice of pendingInvoices) {
             try {
-                await sendEmail({
+                sendEmail({
                     to: invoice.user.email,
                     subject: `Rappel : Votre facture #${invoice.id} est en attente de paiement`,
                     templateName: 'INVOICE_REMINDER',
@@ -92,7 +92,7 @@ async function checkExpiredServices() {
                 });
 
                 // Send Suspension Email
-                await sendEmail({
+                sendEmail({
                     to: updatedService.user.email,
                     subject: `Suspension de votre service : ${updatedService.product.name}`,
                     templateName: 'SERVICE_SUSPENDED',
@@ -155,7 +155,7 @@ async function checkExpiredServices() {
                 });
 
                 // Send Termination Email
-                await sendEmail({
+                sendEmail({
                     to: updatedService.user.email,
                     subject: `Suppression de votre service : ${updatedService.product.name}`,
                     templateName: 'SERVICE_TERMINATED',

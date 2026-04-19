@@ -37,7 +37,7 @@ export const createTicket = async (req: any, res: Response) => {
     await createLog({ type: 'SERVICE', level: 'INFO', message: `New ticket created: ${subject}`, userId });
 
     // Notify user of ticket creation
-    await sendEmail({
+    sendEmail({
       to: ticket.user.email,
       subject: `Confirmation de votre ticket : ${subject}`,
       templateName: 'TICKET_CREATED',
@@ -152,7 +152,7 @@ export const replyToTicket = async (req: any, res: Response) => {
 
     if (isStaff) {
       // Notify user of staff reply
-      await sendEmail({
+      sendEmail({
         to: ticket.user.email,
         subject: `Nouvelle réponse à votre ticket : ${ticket.subject}`,
         templateName: 'TICKET_REPLY',

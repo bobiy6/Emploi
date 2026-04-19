@@ -30,7 +30,7 @@ export const createOrder = async (req: any, res: Response) => {
     });
 
     // Send New Invoice Email
-    await sendEmail({
+    sendEmail({
       to: invoice.user.email,
       subject: `Nouvelle facture #${invoice.id} - Infralyonix`,
       templateName: 'NEW_INVOICE',
