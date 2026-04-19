@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api';
 import { CheckCircle, XCircle, Mail, ArrowLeft } from 'lucide-react';
 
 const Unsubscribe = () => {
@@ -16,7 +16,7 @@ const Unsubscribe = () => {
 
         const doUnsubscribe = async () => {
             try {
-                await axios.post('/api/auth/unsubscribe', { email });
+                await api.post('/auth/unsubscribe', { email });
                 setStatus('success');
             } catch (err) {
                 setStatus('error');
