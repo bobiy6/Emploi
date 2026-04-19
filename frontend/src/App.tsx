@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import Unsubscribe from './pages/auth/Unsubscribe';
 import ClientLayout from './layouts/ClientLayout';
 import Dashboard from './pages/client/Dashboard';
 import Store from './pages/client/Store';
@@ -22,6 +23,7 @@ import Accounting from './pages/admin/Accounting';
 import Infrastructure from './pages/admin/Infrastructure';
 import LogViewer from './pages/admin/LogViewer';
 import DatabaseManager from './pages/admin/DatabaseManager';
+import EmailManager from './pages/admin/EmailManager';
 import { AdminGuard } from './components/AdminGuard';
 import { AuthGuard } from './components/AuthGuard';
 import { AuthProvider } from './hooks/useAuth';
@@ -34,6 +36,7 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
 
           {/* Protected Routes */}
           <Route path="/dashboard" element={<AuthGuard><ClientLayout><Dashboard /></ClientLayout></AuthGuard>} />
@@ -55,6 +58,7 @@ const App = () => {
           <Route path="/admin/infrastructure" element={<AdminGuard><AdminLayout><Infrastructure /></AdminLayout></AdminGuard>} />
           <Route path="/admin/logs" element={<AdminGuard><AdminLayout><LogViewer /></AdminLayout></AdminGuard>} />
           <Route path="/admin/db" element={<AdminGuard><AdminLayout><DatabaseManager /></AdminLayout></AdminGuard>} />
+          <Route path="/admin/email" element={<AdminGuard><AdminLayout><EmailManager /></AdminLayout></AdminGuard>} />
           <Route path="/admin/settings" element={<AdminGuard><AdminLayout><ModuleSettings /></AdminLayout></AdminGuard>} />
 
           {/* Redirects */}

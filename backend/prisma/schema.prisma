@@ -51,6 +51,9 @@ model User {
   address       String?
   permissions   Json?    // Array of string permissions for sub-admins
   balance       Float    @default(0.0)
+  emailVerified Boolean  @default(false)
+  emailVerificationToken String?
+  unsubscribed  Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -165,6 +168,27 @@ model SystemSetting {
   id    Int    @id @default(autoincrement())
   key   String @unique
   value Json
+}
+
+model EmailTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  subject   String
+  content   String   @db.Text
+  type      String   // 'TRANSACTIONAL', 'CAMPAIGN'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailCampaign {
+  id          Int      @id @default(autoincrement())
+  name        String
+  templateId  Int
+  status      String   // 'DRAFT', 'SENDING', 'SENT'
+  target      String   // 'ALL', 'ACTIVE_SERVICES', 'NO_SERVICES'
+  scheduledAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Log {

@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../../config/prisma.js';
 import { createLog } from '../../utils/logger.js';
+import { sendEmail } from '../../services/email.service.js';
 
 /**
  * Client: Create a new ticket
@@ -34,6 +35,19 @@ export const createTicket = async (req: any, res: Response) => {
     });
 
     await createLog({ type: 'SERVICE', level: 'INFO', message: `New ticket created: ${subject}`, userId });
+
+    // Notify user of ticket creation
+    await sendEmail({
+      to: ticket.user.email,
+      subject: `Confirmation de votre ticket : ${subject}`,
+      templateName: 'TICKET_CREATED',
+      context: {
+        name: ticket.user.name,
+        subject: ticket.subject,
+        ticketId: ticket.id
+      }
+    });
+
     res.status(201).json(ticket);
   } catch (error: any) {
     console.error('TICKET CREATE ERROR:', error);
@@ -107,7 +121,10 @@ export const replyToTicket = async (req: any, res: Response) => {
     const ticketId = parseInt(id);
     if (isNaN(ticketId)) return res.status(400).json({ message: 'Invalid ID' });
 
-    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: { user: { select: { email: true, name: true } } }
+    });
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
     // Client can only reply to their own tickets
@@ -132,6 +149,21 @@ export const replyToTicket = async (req: any, res: Response) => {
         updatedAt: new Date()
       }
     });
+
+    if (isStaff) {
+      // Notify user of staff reply
+      await sendEmail({
+        to: ticket.user.email,
+        subject: `Nouvelle réponse à votre ticket : ${ticket.subject}`,
+        templateName: 'TICKET_REPLY',
+        context: {
+          name: ticket.user.name,
+          subject: ticket.subject,
+          ticketId: ticket.id,
+          message: message
+        }
+      });
+    }
 
     res.status(201).json(newMessage);
   } catch (error: any) {

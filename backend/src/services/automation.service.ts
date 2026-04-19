@@ -1,6 +1,7 @@
 import prisma from '../config/prisma.js';
 import { getAdapter } from '../modules/provisioning/provisioning.service.js';
 import { createLog } from '../utils/logger.js';
+import { sendEmail } from './email.service.js';
 
 export const startAutomation = () => {
     console.log('[AUTOMATION] Starting lifecycle service...');
@@ -46,9 +47,22 @@ async function checkExpiredServices() {
                     await adapter.suspend(service.externalId, server);
                 }
 
-                await prisma.service.update({
+                const updatedService = await prisma.service.update({
                     where: { id: service.id },
-                    data: { status: 'SUSPENDED' }
+                    data: { status: 'SUSPENDED' },
+                    include: { user: true, product: true }
+                });
+
+                // Send Suspension Email
+                await sendEmail({
+                    to: updatedService.user.email,
+                    subject: `Suspension de votre service : ${updatedService.product.name}`,
+                    templateName: 'SERVICE_SUSPENDED',
+                    context: {
+                        name: updatedService.user.name,
+                        productName: updatedService.product.name,
+                        serviceId: updatedService.id
+                    }
                 });
 
                 await createLog({
@@ -96,9 +110,22 @@ async function checkExpiredServices() {
                     await adapter.terminate(service.externalId, server);
                 }
 
-                await prisma.service.update({
+                const updatedService = await prisma.service.update({
                     where: { id: service.id },
-                    data: { status: 'TERMINATED' }
+                    data: { status: 'TERMINATED' },
+                    include: { user: true, product: true }
+                });
+
+                // Send Termination Email
+                await sendEmail({
+                    to: updatedService.user.email,
+                    subject: `Suppression de votre service : ${updatedService.product.name}`,
+                    templateName: 'SERVICE_TERMINATED',
+                    context: {
+                        name: updatedService.user.name,
+                        productName: updatedService.product.name,
+                        serviceId: updatedService.id
+                    }
                 });
 
                 await createLog({
