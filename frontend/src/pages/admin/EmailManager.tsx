@@ -288,6 +288,7 @@ const EmailManager = () => {
                         </tbody>
                     </table>
                 </div>
+                </div>
             )}
 
             {showTemplateModal && (
