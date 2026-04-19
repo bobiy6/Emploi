@@ -19,11 +19,13 @@ export interface EmailOptions {
     templateName: string;
     context: any;
     isMarketing?: boolean;
+    delay?: number;
 }
 
 export const sendEmail = async (options: EmailOptions) => {
     await emailQueue.add('send-email', options, {
         attempts: 3,
+        delay: options.delay || 0,
         backoff: {
             type: 'exponential',
             delay: 1000,

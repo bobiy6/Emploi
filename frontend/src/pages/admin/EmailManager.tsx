@@ -9,6 +9,10 @@ const EmailManager = () => {
     const [campaigns, setCampaigns] = useState([]);
     const [loading, setLoading] = useState(false);
     const [testResult, setTestResult] = useState(null);
+    const [showCampaignModal, setShowCampaignModal] = useState(false);
+    const [newCampaign, setNewCampaign] = useState({ name: '', templateId: '', target: 'ALL', scheduledAt: '' });
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [editingTemplate, setEditingTemplate] = useState<any>(null);
 
     useEffect(() => {
         fetchData();
@@ -28,6 +32,53 @@ const EmailManager = () => {
             }
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const upsertTemplate = async () => {
+        try {
+            if (editingTemplate.id) {
+                await axios.put(`/api/admin/email/templates/${editingTemplate.id}`, editingTemplate);
+            } else {
+                await axios.post('/api/admin/email/templates', editingTemplate);
+            }
+            setShowTemplateModal(false);
+            fetchData();
+        } catch (err) {
+            alert('Failed to save template');
+        }
+    };
+
+    const deleteTemplate = async (id: number) => {
+        if (!confirm('Are you sure?')) return;
+        try {
+            await axios.delete(`/api/admin/email/templates/${id}`);
+            fetchData();
+        } catch (err) {
+            alert('Failed to delete template');
+        }
+    };
+
+    const createCampaign = async () => {
+        try {
+            await axios.post('/api/admin/email/campaigns', {
+                ...newCampaign,
+                templateId: parseInt(newCampaign.templateId)
+            });
+            setShowCampaignModal(false);
+            fetchData();
+        } catch (err) {
+            alert('Failed to create campaign');
+        }
+    };
+
+    const sendCampaign = async (id: number) => {
+        try {
+            await axios.post(`/api/admin/email/campaigns/${id}/send`);
+            alert('Campaign queued');
+            fetchData();
+        } catch (err) {
+            alert('Failed to send campaign');
         }
     };
 
@@ -154,7 +205,10 @@ const EmailManager = () => {
             {activeTab === 'templates' && (
                 <div className="space-y-4">
                     <div className="flex justify-end">
-                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                        <button
+                            onClick={() => { setEditingTemplate({ name: '', subject: '', content: '', type: 'TRANSACTIONAL' }); setShowTemplateModal(true); }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
                             <Plus size={18} /> Nouveau Template
                         </button>
                     </div>
@@ -166,8 +220,18 @@ const EmailManager = () => {
                                         <Mail size={24} />
                                     </div>
                                     <div className="flex gap-2">
-                                        <button className="text-slate-400 hover:text-white"><Edit2 size={16} /></button>
-                                        <button className="text-slate-400 hover:text-red-500"><Trash2 size={16} /></button>
+                                        <button
+                                            onClick={() => { setEditingTemplate(t); setShowTemplateModal(true); }}
+                                            className="text-slate-400 hover:text-white"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteTemplate(t.id)}
+                                            className="text-slate-400 hover:text-red-500"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     </div>
                                 </div>
                                 <h3 className="text-white font-semibold text-lg">{t.name}</h3>
@@ -180,6 +244,15 @@ const EmailManager = () => {
             )}
 
             {activeTab === 'campaigns' && (
+                <div className="space-y-4">
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setShowCampaignModal(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                            <Plus size={18} /> Nouvelle Campagne
+                        </button>
+                    </div>
                 <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
                     <table className="w-full text-left">
                         <thead>
@@ -201,13 +274,125 @@ const EmailManager = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="text-blue-500 hover:text-blue-400 p-2"><Play size={18} /></button>
+                                        <button
+                                            onClick={() => sendCampaign(c.id)}
+                                            className="text-blue-500 hover:text-blue-400 p-2"
+                                            title="Lancer / Programmer"
+                                        >
+                                            <Play size={18} />
+                                        </button>
                                         <button className="text-slate-400 hover:text-red-500 p-2"><Trash2 size={18} /></button>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {showTemplateModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-2xl font-bold text-white mb-6">
+                            {editingTemplate?.id ? 'Modifier le Template' : 'Nouveau Template'}
+                        </h2>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-slate-400 mb-1">Nom (Unique)</label>
+                                    <input
+                                        type="text" value={editingTemplate?.name} onChange={e => setEditingTemplate({...editingTemplate, name: e.target.value})}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                                        placeholder="WELCOME_EMAIL"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-slate-400 mb-1">Type</label>
+                                    <select
+                                        value={editingTemplate?.type} onChange={e => setEditingTemplate({...editingTemplate, type: e.target.value})}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                                    >
+                                        <option value="TRANSACTIONAL">Transactionnel</option>
+                                        <option value="CAMPAIGN">Campagne / Marketing</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-slate-400 mb-1">Sujet de l'email</label>
+                                <input
+                                    type="text" value={editingTemplate?.subject} onChange={e => setEditingTemplate({...editingTemplate, subject: e.target.value})}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                                    placeholder="Bienvenue {{name}} !"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-slate-400 mb-1">Contenu (HTML + Handlebars)</label>
+                                <textarea
+                                    value={editingTemplate?.content} onChange={e => setEditingTemplate({...editingTemplate, content: e.target.value})}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white h-64 font-mono text-sm"
+                                    placeholder="<h1>Bonjour {{name}}</h1>..."
+                                />
+                                <p className="text-xs text-slate-500 mt-2">
+                                    Variables disponibles : {"{{name}}"}, {"{{email}}"}, {"{{unsubscribeUrl}}"} (marketing uniquement).
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4 mt-8">
+                            <button onClick={() => setShowTemplateModal(false)} className="flex-1 bg-slate-700 text-white py-2 rounded-lg">Annuler</button>
+                            <button onClick={upsertTemplate} className="flex-1 bg-blue-600 text-white py-2 rounded-lg">Enregistrer</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showCampaignModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 max-w-md w-full">
+                        <h2 className="text-2xl font-bold text-white mb-6">Nouvelle Campagne</h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-slate-400 mb-1">Nom de la campagne</label>
+                                <input
+                                    type="text" value={newCampaign.name} onChange={e => setNewCampaign({...newCampaign, name: e.target.value})}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-slate-400 mb-1">Template</label>
+                                <select
+                                    value={newCampaign.templateId} onChange={e => setNewCampaign({...newCampaign, templateId: e.target.value})}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                                >
+                                    <option value="">Sélectionner un template</option>
+                                    {templates.map((t: any) => (
+                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-slate-400 mb-1">Cible</label>
+                                <select
+                                    value={newCampaign.target} onChange={e => setNewCampaign({...newCampaign, target: e.target.value})}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                                >
+                                    <option value="ALL">Tous les utilisateurs</option>
+                                    <option value="ACTIVE_SERVICES">Services actifs uniquement</option>
+                                    <option value="NO_SERVICES">Aucun service</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-slate-400 mb-1">Planifier (Optionnel)</label>
+                                <input
+                                    type="datetime-local" value={newCampaign.scheduledAt} onChange={e => setNewCampaign({...newCampaign, scheduledAt: e.target.value})}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-4 mt-8">
+                            <button onClick={() => setShowCampaignModal(false)} className="flex-1 bg-slate-700 text-white py-2 rounded-lg">Annuler</button>
+                            <button onClick={createCampaign} className="flex-1 bg-blue-600 text-white py-2 rounded-lg">Créer</button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

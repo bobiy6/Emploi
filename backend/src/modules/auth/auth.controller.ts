@@ -142,6 +142,31 @@ export const updateProfile = async (req: any, res: Response) => {
   }
 };
 
+export const verifyEmail = async (req: Request, res: Response) => {
+  const { token } = req.body;
+  try {
+    const user = await prisma.user.findFirst({
+      where: { emailVerificationToken: token }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationToken: null
+      }
+    });
+
+    res.json({ message: 'Email verified successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Verification failed', error });
+  }
+};
+
 export const unsubscribe = async (req: Request, res: Response) => {
   const { email } = req.body;
   try {

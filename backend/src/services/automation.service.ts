@@ -9,11 +9,49 @@ export const startAutomation = () => {
     // Run every hour
     setInterval(async () => {
         await checkExpiredServices();
+        await checkUnpaidInvoices();
     }, 60 * 60 * 1000);
 
     // Run once at startup
     checkExpiredServices();
+    checkUnpaidInvoices();
 };
+
+async function checkUnpaidInvoices() {
+    console.log('[AUTOMATION] Checking for unpaid invoices...');
+    const now = new Date();
+    const threeDaysAgo = new Date(now);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    try {
+        const pendingInvoices = await prisma.invoice.findMany({
+            where: {
+                status: 'UNPAID',
+                createdAt: { lte: threeDaysAgo },
+            },
+            include: { user: true }
+        });
+
+        for (const invoice of pendingInvoices) {
+            try {
+                await sendEmail({
+                    to: invoice.user.email,
+                    subject: `Rappel : Votre facture #${invoice.id} est en attente de paiement`,
+                    templateName: 'INVOICE_REMINDER',
+                    context: {
+                        name: invoice.user.name,
+                        invoiceId: invoice.id,
+                        amount: invoice.amount
+                    }
+                });
+            } catch (error) {
+                console.error(`Failed to send reminder for invoice ${invoice.id}:`, error);
+            }
+        }
+    } catch (err: any) {
+        console.error('[AUTOMATION] Error checking unpaid invoices:', err.message);
+    }
+}
 
 async function checkExpiredServices() {
     const now = new Date();

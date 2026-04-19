@@ -36,6 +36,66 @@ async function main() {
     }
   });
 
+  await prisma.emailTemplate.createMany({
+    data: [
+      {
+        name: 'WELCOME_VERIFICATION',
+        subject: 'Bienvenue chez Infralyonix !',
+        content: '<h1>Bonjour {{name}}</h1><p>Merci de vous être inscrit. Veuillez vérifier votre email en cliquant ici : <a href="{{verificationUrl}}">{{verificationUrl}}</a></p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'SERVICE_READY',
+        subject: 'Votre service {{productName}} est prêt',
+        content: '<h1>Bonne nouvelle !</h1><p>Votre service {{productName}} a été provisionné avec succès.</p><p>ID externe : {{externalId}}</p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'NEW_INVOICE',
+        subject: 'Nouvelle facture #{{invoiceId}}',
+        content: '<h1>Nouvelle facture</h1><p>Une nouvelle facture de {{amount}}€ a été générée. Date limite : {{dueDate}}</p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'INVOICE_PAID',
+        subject: 'Facture #{{invoiceId}} payée',
+        content: '<h1>Merci !</h1><p>Votre paiement de {{amount}}€ pour la facture #{{invoiceId}} a bien été reçu.</p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'INVOICE_REMINDER',
+        subject: 'Rappel : Facture #{{invoiceId}} impayée',
+        content: '<h1>Rappel</h1><p>Votre facture #{{invoiceId}} est toujours en attente de paiement ({{amount}}€).</p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'SERVICE_SUSPENDED',
+        subject: 'Service suspendu : {{productName}}',
+        content: '<h1>Service suspendu</h1><p>Votre service {{productName}} a été suspendu faute de paiement.</p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'SERVICE_TERMINATED',
+        subject: 'Service supprimé : {{productName}}',
+        content: '<h1>Service supprimé</h1><p>Votre service {{productName}} a été définitivement supprimé.</p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'TICKET_CREATED',
+        subject: 'Ticket reçu : {{subject}}',
+        content: '<h1>Ticket ouvert</h1><p>Nous avons bien reçu votre ticket #{{ticketId}} : {{subject}}</p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'TICKET_REPLY',
+        subject: 'Réponse à votre ticket : {{subject}}',
+        content: '<h1>Nouvelle réponse</h1><p>Un agent a répondu à votre ticket #{{ticketId}}.</p><hr><p>{{message}}</p>',
+        type: 'TRANSACTIONAL'
+      }
+    ],
+    skipDuplicates: true
+  });
+
   await prisma.product.createMany({
     data: [
       {
