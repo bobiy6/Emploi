@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../api';
 import { Mail, Save, Play, Trash2, Plus, Edit2, Settings } from 'lucide-react';
 
 const EmailManager = () => {
@@ -21,13 +21,13 @@ const EmailManager = () => {
     const fetchData = async () => {
         try {
             if (activeTab === 'settings') {
-                const res = await axios.get('/api/admin/email/settings');
+                const res = await api.get('/admin/email/settings');
                 setSmtp(res.data);
             } else if (activeTab === 'templates') {
-                const res = await axios.get('/api/admin/email/templates');
+                const res = await api.get('/admin/email/templates');
                 setTemplates(res.data);
             } else if (activeTab === 'campaigns') {
-                const res = await axios.get('/api/admin/email/campaigns');
+                const res = await api.get('/admin/email/campaigns');
                 setCampaigns(res.data);
             }
         } catch (err) {
@@ -38,9 +38,9 @@ const EmailManager = () => {
     const upsertTemplate = async () => {
         try {
             if (editingTemplate.id) {
-                await axios.put(`/api/admin/email/templates/${editingTemplate.id}`, editingTemplate);
+                await api.put(`/admin/email/templates/${editingTemplate.id}`, editingTemplate);
             } else {
-                await axios.post('/api/admin/email/templates', editingTemplate);
+                await api.post('/admin/email/templates', editingTemplate);
             }
             setShowTemplateModal(false);
             fetchData();
@@ -52,7 +52,7 @@ const EmailManager = () => {
     const deleteTemplate = async (id: number) => {
         if (!confirm('Are you sure?')) return;
         try {
-            await axios.delete(`/api/admin/email/templates/${id}`);
+            await api.delete(`/admin/email/templates/${id}`);
             fetchData();
         } catch (err) {
             alert('Failed to delete template');
@@ -61,7 +61,7 @@ const EmailManager = () => {
 
     const createCampaign = async () => {
         try {
-            await axios.post('/api/admin/email/campaigns', {
+            await api.post('/admin/email/campaigns', {
                 ...newCampaign,
                 templateId: parseInt(newCampaign.templateId)
             });
@@ -74,7 +74,7 @@ const EmailManager = () => {
 
     const sendCampaign = async (id: number) => {
         try {
-            await axios.post(`/api/admin/email/campaigns/${id}/send`);
+            await api.post(`/admin/email/campaigns/${id}/send`);
             alert('Campaign queued');
             fetchData();
         } catch (err) {
@@ -85,7 +85,7 @@ const EmailManager = () => {
     const saveSettings = async () => {
         setLoading(true);
         try {
-            await axios.post('/api/admin/email/settings', smtp);
+            await api.post('/admin/email/settings', smtp);
             alert('Settings saved');
         } catch (err) {
             alert('Failed to save');
@@ -98,7 +98,7 @@ const EmailManager = () => {
         setLoading(true);
         setTestResult(null);
         try {
-            await axios.post('/api/admin/email/settings/test');
+            await api.post('/admin/email/settings/test');
             setTestResult({ success: true, message: 'Connection successful!' });
         } catch (err: any) {
             setTestResult({ success: false, message: err.response?.data?.error || 'Connection failed' });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../api';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const VerifyEmail = () => {
@@ -19,7 +19,7 @@ const VerifyEmail = () => {
 
         const verify = async () => {
             try {
-                await axios.post('/api/auth/verify-email', { token });
+                await api.post('/auth/verify-email', { token });
                 setStatus('success');
                 setTimeout(() => navigate('/login'), 3000);
             } catch (err: any) {
