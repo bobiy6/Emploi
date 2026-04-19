@@ -7,6 +7,18 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
     maxRetriesPerRequest: null,
+    connectTimeout: 5000,
+    reconnectOnError: (err) => {
+        const targetError = 'READONLY';
+        if (err.message.includes(targetError)) {
+            return true;
+        }
+        return false;
+    },
+});
+
+redisConnection.on('error', (err) => {
+    console.error('[REDIS ERROR]:', err.message);
 });
 
 export const emailQueue = new Queue('email-queue', {
@@ -23,14 +35,19 @@ export interface EmailOptions {
 }
 
 export const sendEmail = async (options: EmailOptions) => {
-    await emailQueue.add('send-email', options, {
-        attempts: 3,
-        delay: options.delay || 0,
-        backoff: {
-            type: 'exponential',
-            delay: 1000,
-        },
-    });
+    try {
+        await emailQueue.add('send-email', options, {
+            attempts: 3,
+            delay: options.delay || 0,
+            backoff: {
+                type: 'exponential',
+                delay: 1000,
+            },
+        });
+    } catch (error) {
+        console.error('[EMAIL QUEUE ERROR]:', error);
+        // Do not throw to prevent breaking the main request flow
+    }
 };
 
 export const getTransporter = async () => {

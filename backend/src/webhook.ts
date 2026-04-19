@@ -45,7 +45,7 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
         });
 
         const { sendEmail } = await import('./services/email.service.js');
-        await sendEmail({
+        sendEmail({
             to: user.email,
             subject: 'Confirmation de votre rechargement de crédits',
             templateName: 'CREDIT_REFILL_CONFIRMATION',

@@ -20,9 +20,15 @@ export const authMiddleware = (req: any, res: Response, next: NextFunction) => {
     req.userId = decoded.userId;
     req.userRole = decoded.role;
     next();
-  } catch (error) {
-    createLog({ type: 'AUTH', level: 'WARN', message: 'Failed authentication attempt', details: { error } });
-    res.status(401).json({ message: 'Invalid token' });
+  } catch (error: any) {
+    console.warn('[AUTH ERROR]:', error.message);
+    createLog({ type: 'AUTH', level: 'WARN', message: 'Failed authentication attempt', details: { error: error.message } });
+
+    let message = 'Invalid token';
+    if (error.name === 'TokenExpiredError') message = 'Token expired';
+    if (error.name === 'JsonWebTokenError') message = 'Token malformed';
+
+    res.status(401).json({ message });
   }
 };
 

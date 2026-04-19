@@ -28,7 +28,7 @@ export const register = async (req: Request, res: Response) => {
     });
 
     // Trigger Welcome & Verification Email
-    await sendEmail({
+    sendEmail({
       to: user.email,
       subject: 'Bienvenue chez Infralyonix - Vérifiez votre email',
       templateName: 'WELCOME_VERIFICATION',

@@ -34,7 +34,7 @@ export const payInvoice = async (req: any, res: Response) => {
     ]);
 
     // Send Invoice Paid Email
-    await sendEmail({
+    sendEmail({
       to: invoice.user.email,
       subject: `Confirmation de paiement - Facture #${invoice.id}`,
       templateName: 'INVOICE_PAID',
@@ -126,7 +126,7 @@ export const payInvoice = async (req: any, res: Response) => {
             });
 
             // Send Service Ready Email
-            await sendEmail({
+            sendEmail({
               to: invoice.user.email,
               subject: `Votre service ${product.name} est prêt !`,
               templateName: 'SERVICE_READY',
