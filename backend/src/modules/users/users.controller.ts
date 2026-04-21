@@ -58,11 +58,22 @@ export const updateUser = async (req: any, res: Response) => {
 
 export const deleteUser = async (req: any, res: Response) => {
   const { id } = req.params;
+  const userId = parseInt(id as string);
   try {
-    await prisma.user.delete({ where: { id: parseInt(id as string) } });
-    res.json({ message: 'User deleted' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting user', error });
+    // Correct manual cascade for account deletion
+    await prisma.$transaction([
+      prisma.ticketMessage.deleteMany({ where: { userId } }),
+      prisma.ticket.deleteMany({ where: { userId } }),
+      prisma.log.deleteMany({ where: { userId } }),
+      prisma.invoice.deleteMany({ where: { userId } }),
+      prisma.service.deleteMany({ where: { userId } }),
+      prisma.order.deleteMany({ where: { userId } }),
+      prisma.user.delete({ where: { id: userId } })
+    ]);
+    res.json({ message: 'User and all related data deleted successfully' });
+  } catch (error: any) {
+    console.error('DELETE USER ERROR:', error);
+    res.status(500).json({ message: 'Error deleting user record', error: error.message });
   }
 };
 
