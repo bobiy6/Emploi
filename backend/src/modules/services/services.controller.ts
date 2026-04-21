@@ -92,7 +92,8 @@ export const refreshServiceDetails = async (req: any, res: Response) => {
             data: {
                 externalId: JSON.stringify(details), // Ensure we update the identifier if needed
                 config: updatedConfig
-            }
+            },
+            include: { product: true, user: { select: { email: true } } }
         });
 
         res.json(updatedService);
@@ -124,7 +125,11 @@ export const adminServiceAction = async (req: any, res: Response) => {
                 await prisma.service.update({ where: { id: service.id }, data: { status: 'SUSPENDED' } });
             } else if (action === 'terminate') {
                 await adapter.terminate(service.externalId, server);
-                await prisma.service.update({ where: { id: service.id }, data: { status: 'TERMINATED' } });
+                await prisma.$transaction([
+                    prisma.log.deleteMany({ where: { serviceId: service.id } }),
+                    prisma.service.delete({ where: { id: service.id } })
+                ]);
+                return res.json({ message: 'Service terminated and deleted' });
             } else if (action === 'unsuspend') {
                 await adapter.unsuspend(service.externalId, server);
                 await prisma.service.update({ where: { id: service.id }, data: { status: 'ACTIVE' } });

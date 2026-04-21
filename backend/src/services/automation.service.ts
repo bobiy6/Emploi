@@ -125,7 +125,8 @@ async function checkExpiredServices() {
             where: {
                 status: 'SUSPENDED',
                 nextDueDate: { lt: threeDaysAgo }
-            }
+            },
+            include: { user: true, product: true }
         });
 
         for (const service of toTerminate) {
@@ -148,21 +149,21 @@ async function checkExpiredServices() {
                     await adapter.terminate(service.externalId, server);
                 }
 
-                const updatedService = await prisma.service.update({
-                    where: { id: service.id },
-                    data: { status: 'TERMINATED' },
-                    include: { user: true, product: true }
-                });
+                // Perform deletion after adapter call
+                await prisma.$transaction([
+                    prisma.log.deleteMany({ where: { serviceId: service.id } }),
+                    prisma.service.delete({ where: { id: service.id } })
+                ]);
 
-                // Send Termination Email
+                // Send Termination Email (use original service record as updatedService no longer exists)
                 sendEmail({
-                    to: updatedService.user.email,
-                    subject: `Suppression de votre service : ${updatedService.product.name}`,
+                    to: (service as any).user.email,
+                    subject: `Suppression de votre service : ${(service as any).product.name}`,
                     templateName: 'SERVICE_TERMINATED',
                     context: {
-                        name: updatedService.user.name,
-                        productName: updatedService.product.name,
-                        serviceId: updatedService.id
+                        name: (service as any).user.name,
+                        productName: (service as any).product.name,
+                        serviceId: service.id
                     }
                 });
 
