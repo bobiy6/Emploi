@@ -22,43 +22,43 @@ const AdminDashboard = () => {
   const stats = data?.stats;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <Card className="bg-white border-none shadow-2xl shadow-gray-200/50 p-8 relative overflow-hidden group">
+        <Card className="bg-white border-none shadow-xl p-8 relative overflow-hidden group">
            <div className="relative z-10">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Revenue</p>
-              <h3 className="text-5xl font-black text-gray-900 mb-6 tracking-tight">{stats?.revenue || 0}€</h3>
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-1">Total Revenue</p>
+              <h3 className="text-4xl font-black text-gray-900 mb-6">{stats?.revenue || 0}€</h3>
               <div className="flex items-center gap-2 text-emerald-500 font-bold text-sm">
                  <ArrowUpRight className="w-4 h-4" /> Real-time tracking
               </div>
            </div>
-           <DollarSign className="absolute -bottom-4 -right-4 w-32 h-32 text-emerald-500 opacity-[0.03] group-hover:scale-110 transition-transform duration-700" />
+           <DollarSign className="absolute -bottom-4 -right-4 w-32 h-32 text-emerald-50 opacity-10 group-hover:scale-110 transition-transform duration-700" />
         </Card>
 
-        <Card className="bg-white border-none shadow-2xl shadow-gray-200/50 p-8 relative overflow-hidden group">
+        <Card className="bg-white border-none shadow-xl p-8 relative overflow-hidden group">
            <div className="relative z-10">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Total Users</p>
-              <h3 className="text-5xl font-black text-gray-900 mb-6 tracking-tight">{stats?.users || 0}</h3>
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-1">Total Users</p>
+              <h3 className="text-4xl font-black text-gray-900 mb-6">{stats?.users || 0}</h3>
               <div className="flex items-center gap-2 text-blue-500 font-bold text-sm">
                  <ArrowUpRight className="w-4 h-4" /> Active customers
               </div>
            </div>
-           <Users className="absolute -bottom-4 -right-4 w-32 h-32 text-blue-500 opacity-[0.03] group-hover:scale-110 transition-transform duration-700" />
+           <Users className="absolute -bottom-4 -right-4 w-32 h-32 text-blue-50 opacity-10 group-hover:scale-110 transition-transform duration-700" />
         </Card>
 
-        <Card className="bg-white border-none shadow-2xl shadow-gray-200/50 p-8 relative overflow-hidden group">
+        <Card className="bg-white border-none shadow-xl p-8 relative overflow-hidden group">
            <div className="relative z-10">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Active Services</p>
-              <h3 className="text-5xl font-black text-gray-900 mb-6 tracking-tight">{stats?.activeServices || 0}</h3>
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-1">Active Services</p>
+              <h3 className="text-4xl font-black text-gray-900 mb-6">{stats?.activeServices || 0}</h3>
               <Badge variant="success">Provisioning active</Badge>
            </div>
-           <Server className="absolute -bottom-4 -right-4 w-32 h-32 text-indigo-500 opacity-[0.03] group-hover:scale-110 transition-transform duration-700" />
+           <Server className="absolute -bottom-4 -right-4 w-32 h-32 text-indigo-50 opacity-10 group-hover:scale-110 transition-transform duration-700" />
         </Card>
 
-        <Card className="bg-white border-none shadow-2xl shadow-gray-200/50 p-8 relative overflow-hidden group">
+        <Card className="bg-white border-none shadow-xl p-8 relative overflow-hidden group">
            <div className="relative z-10">
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Open Tickets</p>
-              <h3 className="text-5xl font-black text-gray-900 mb-6 tracking-tight">{stats?.openTickets || 0}</h3>
+              <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-1">Open Tickets</p>
+              <h3 className="text-4xl font-black text-gray-900 mb-6">{stats?.openTickets || 0}</h3>
               <Badge variant={stats?.openTickets > 0 ? 'danger' : 'ghost'}>Support Queue</Badge>
            </div>
            <MessageSquare className="absolute -bottom-4 -right-4 w-32 h-32 text-rose-50 opacity-10 group-hover:scale-110 transition-transform duration-700" />
@@ -66,26 +66,26 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="bg-gradient-to-br from-rose-500 to-red-600 border-none shadow-2xl shadow-rose-500/20 p-8 relative overflow-hidden group text-white">
+        <Card className="bg-rose-500 border-none shadow-xl p-8 relative overflow-hidden group text-white">
            <div className="relative z-10">
-              <p className="text-xs font-black text-rose-100 uppercase tracking-widest mb-1">Errors (24h)</p>
-              <h3 className="text-5xl font-black mb-6 tracking-tight">{stats?.errorCount24h || 0}</h3>
+              <p className="text-sm font-black text-rose-200 uppercase tracking-widest mb-1">Errors (24h)</p>
+              <h3 className="text-4xl font-black mb-6">{stats?.errorCount24h || 0}</h3>
               <div className="flex items-center gap-2 font-bold text-sm">
                  <AlertCircle className="w-4 h-4" /> System monitoring
               </div>
            </div>
-           <AlertCircle className="absolute -bottom-4 -right-4 w-32 h-32 text-white opacity-[0.08] group-hover:scale-110 transition-transform duration-700" />
+           <AlertCircle className="absolute -bottom-4 -right-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-700" />
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-500 to-orange-600 border-none shadow-2xl shadow-amber-500/20 p-8 relative overflow-hidden group text-white">
+        <Card className="bg-amber-500 border-none shadow-xl p-8 relative overflow-hidden group text-white">
            <div className="relative z-10">
-              <p className="text-xs font-black text-amber-100 uppercase tracking-widest mb-1">Provisioning Errors</p>
-              <h3 className="text-5xl font-black mb-6 tracking-tight">{stats?.provisioningErrors || 0}</h3>
+              <p className="text-sm font-black text-amber-200 uppercase tracking-widest mb-1">Provisioning Errors</p>
+              <h3 className="text-4xl font-black mb-6">{stats?.provisioningErrors || 0}</h3>
               <div className="flex items-center gap-2 font-bold text-sm">
                  <Activity className="w-4 h-4" /> Service health
               </div>
            </div>
-           <Terminal className="absolute -bottom-4 -right-4 w-32 h-32 text-white opacity-[0.08] group-hover:scale-110 transition-transform duration-700" />
+           <Terminal className="absolute -bottom-4 -right-4 w-32 h-32 text-white opacity-10 group-hover:scale-110 transition-transform duration-700" />
         </Card>
       </div>
 

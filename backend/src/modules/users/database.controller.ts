@@ -51,24 +51,10 @@ export const deleteModelRecord = async (req: any, res: Response) => {
     if (modelName === 'ticket') {
       await prisma.ticketMessage.deleteMany({ where: { ticketId: recordId } });
     } else if (modelName === 'user') {
-      // Robust cleanup for user-related data (manual cascade)
-      await prisma.ticketMessage.deleteMany({
-        where: {
-          OR: [
-            { userId: recordId },
-            { ticket: { userId: recordId } }
-          ]
-        }
-      });
+      // Very dangerous but requested: cleanup user-related data
+      await prisma.ticketMessage.deleteMany({ where: { userId: recordId } });
       await prisma.ticket.deleteMany({ where: { userId: recordId } });
-      await prisma.log.deleteMany({
-        where: {
-          OR: [
-            { userId: recordId },
-            { service: { userId: recordId } }
-          ]
-        }
-      });
+      await prisma.log.deleteMany({ where: { userId: recordId } });
       await prisma.invoice.deleteMany({ where: { userId: recordId } });
       await prisma.service.deleteMany({ where: { userId: recordId } });
       await prisma.order.deleteMany({ where: { userId: recordId } });
