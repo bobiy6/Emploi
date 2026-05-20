@@ -5,15 +5,14 @@ import { Server, ShieldCheck, CreditCard, Activity, LifeBuoy } from 'lucide-reac
 import api from '../../api';
 
 const StatCard = ({ icon: Icon, label, value, color }: any) => (
-  <Card className="flex items-center gap-6 border-none shadow-2xl shadow-gray-200/50 relative overflow-hidden group">
-    <div className={`p-4 rounded-2xl bg-${color}-500/10 text-${color}-600 relative z-10`}>
-      <Icon className="w-8 h-8" />
+  <Card className="flex items-center gap-4 border-none shadow-md">
+    <div className={`p-3 rounded-xl bg-${color}-50 text-${color}-600`}>
+      <Icon className="w-6 h-6" />
     </div>
-    <div className="relative z-10">
-      <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-3xl font-black text-gray-900">{value}</p>
+    <div>
+      <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{label}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
     </div>
-    <Icon className={`absolute -bottom-4 -right-4 w-24 h-24 text-${color}-500 opacity-[0.03] group-hover:scale-110 transition-transform duration-700`} />
   </Card>
 );
 
@@ -38,8 +37,8 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="space-y-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard icon={Server} label="Active Services" value={services.length} color="blue" />
         <StatCard icon={CreditCard} label="Credit Balance" value={`${profile?.balance?.toFixed(2) || '0.00'}€`} color="emerald" />
         <StatCard icon={ShieldCheck} label="Pending Invoices" value="0" color="rose" />
