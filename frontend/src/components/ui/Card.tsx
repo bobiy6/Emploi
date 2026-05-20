@@ -10,17 +10,17 @@ interface CardProps {
 
 export const Card = ({ children, className, variant = 'white', onClick }: CardProps) => {
   const variants = {
-    white: 'bg-white border border-gray-100 shadow-sm',
-    glass: 'bg-white/80 backdrop-blur-md border border-white/40 shadow-xl',
+    white: 'bg-white border border-gray-50 shadow-xl shadow-gray-200/50',
+    glass: 'bg-white/70 backdrop-blur-xl border border-white/40 shadow-2xl shadow-blue-500/10',
   };
 
   return (
     <div
       onClick={onClick}
       className={cn(
-      'rounded-2xl p-6 transition-all duration-300',
+      'rounded-[2rem] p-8 transition-all duration-500',
       variants[variant],
-      onClick ? 'cursor-pointer hover:border-blue-200 active:scale-[0.98]' : '',
+      onClick ? 'cursor-pointer hover:border-blue-200 hover:-translate-y-1 active:scale-[0.98]' : '',
       className
     )}>
       {children}
