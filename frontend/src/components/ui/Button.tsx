@@ -10,24 +10,24 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, children, ...props }, ref) => {
     const variants = {
-      primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300',
-      secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 disabled:text-gray-400',
-      danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 disabled:bg-red-300',
+      primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.98] disabled:from-blue-300 disabled:to-indigo-300',
+      secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 active:scale-[0.98] disabled:text-gray-400',
+      danger: 'bg-gradient-to-r from-rose-600 to-red-600 text-white hover:shadow-lg hover:shadow-rose-500/30 active:scale-[0.98] disabled:from-rose-300 disabled:to-red-300',
       ghost: 'bg-transparent hover:bg-gray-100 text-gray-600 active:bg-gray-200',
-      outline: 'bg-transparent border border-gray-300 hover:border-gray-400 text-gray-700 active:bg-gray-50',
+      outline: 'bg-transparent border-2 border-gray-100 hover:border-blue-600 hover:text-blue-600 active:bg-blue-50',
     };
 
     const sizes = {
-      sm: 'px-3 py-1.5 text-sm font-medium rounded-md',
-      md: 'px-4 py-2 text-base font-semibold rounded-lg',
-      lg: 'px-6 py-3 text-lg font-bold rounded-xl',
+      sm: 'px-4 py-2 text-sm font-bold rounded-xl',
+      md: 'px-6 py-3 text-base font-bold rounded-2xl',
+      lg: 'px-8 py-4 text-lg font-black rounded-3xl',
     };
 
     return (
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed',
+          'inline-flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed',
           variants[variant],
           sizes[size],
           className
