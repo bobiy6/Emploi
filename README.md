@@ -65,29 +65,45 @@ To connect a Pterodactyl Panel:
 - **Frontend**: React, Vite, Tailwind CSS, Lucide React, Axios.
 - **Database**: PostgreSQL (via Docker).
 
-## Getting Started
+## 🚀 Installation Rapide (One-Click)
 
-### Prerequisites
-- Node.js (v18+)
-- Docker & Docker Compose
+Pour déployer Infralyonix automatiquement sur votre VPS (Ubuntu 22.04), exécutez simplement cette commande :
 
-### Installation
+```bash
+chmod +x install.sh && sudo ./install.sh
+```
 
-1. **Clone the repository**
-2. **Setup Backend**
+Le script s'occupe de tout :
+- Installation de Node.js, PostgreSQL, Redis et Nginx.
+- Configuration de la base de données.
+- Compilation du projet (Frontend & Backend).
+- Lancement de l'API avec PM2.
+- Configuration du serveur Web Nginx.
+
+---
+
+## 🛠️ Installation Manuelle (Développement)
+
+### Prérequis
+- Node.js (v20+)
+- Docker & Docker Compose (Optionnel pour le dev local)
+
+### Étapes
+1. **Cloner le projet**
+2. **Configuration Backend**
    ```bash
    cd backend
    npm install
    cp .env.example .env
-   # Start database
+   # Lancer la DB via Docker si nécessaire
    docker compose up -d
-   # Generate Prisma client & Seed data
+   # Initialisation Prisma
    npx prisma generate
    npx prisma db seed
-   # Start dev server
+   # Lancement
    npm run dev
    ```
-3. **Setup Frontend**
+3. **Configuration Frontend**
    ```bash
    cd frontend
    npm install

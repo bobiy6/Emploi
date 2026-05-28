@@ -1,69 +1,121 @@
 #!/bin/bash
 
-# Infralyonix Automatic Deployment Script
-# Target: Ubuntu 22.04 LTS
+# Infralyonix - Ultimate One-Click Automated Deployment Script
+# Specifically designed for Ubuntu 22.04 LTS
 
 set -e
 
-# Colors for output
+# --- Configuration & Styling ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-echo -e "${BLUE}====================================================${NC}"
-echo -e "${BLUE}       Infralyonix Auto-Installation Script         ${NC}"
-echo -e "${BLUE}====================================================${NC}"
+clear
+echo -e "${BLUE}####################################################${NC}"
+echo -e "${BLUE}#                                                  #${NC}"
+echo -e "${BLUE}#        INFRALYONIX - AUTOMATED INSTALLER         #${NC}"
+echo -e "${BLUE}#                                                  #${NC}"
+echo -e "${BLUE}####################################################${NC}"
+echo ""
 
-# Check if running as root
+# --- Pre-flight Checks ---
+
+# 1. Root check
 if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}Please run as root (use sudo)${NC}"
+  echo -e "${RED}[ERROR] Please run as root (use sudo ./install.sh)${NC}"
   exit 1
 fi
 
-# Configuration Prompts
-read -p "Enter your domain name (e.g., infralyonix.com): " DOMAIN_NAME
-read -s -p "Enter a password for the PostgreSQL user 'infralyonixuser': " DB_PASSWORD
-echo ""
-read -p "Enter a secure JWT Secret (leave blank to generate one): " JWT_SECRET
-
-if [ -z "$JWT_SECRET" ]; then
-    JWT_SECRET=$(openssl rand -base64 32)
-fi
-
-echo -e "\n${GREEN}Step 1: Updating system...${NC}"
-apt update && apt upgrade -y
-
-echo -e "\n${GREEN}Step 2: Installing dependencies (Node.js, PostgreSQL, Nginx, Redis, Git)...${NC}"
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs postgresql postgresql-contrib nginx git redis-server certbot python3-certbot-nginx
-
-echo -e "\n${GREEN}Step 3: Configuring PostgreSQL...${NC}"
-sudo -u postgres psql -c "CREATE DATABASE infralyonix;" || true
-sudo -u postgres psql -c "CREATE USER infralyonixuser WITH PASSWORD '$DB_PASSWORD';" || true
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE infralyonix TO infralyonixuser;"
-sudo -u postgres psql -d infralyonix -c "GRANT ALL ON SCHEMA public TO infralyonixuser;"
-
-echo -e "\n${GREEN}Step 4: Preparing Application Folders...${NC}"
-INSTALL_DIR="/var/www/infralyonix"
-if [ ! -d "$INSTALL_DIR" ]; then
-    mkdir -p /var/www
-    cp -r $(pwd) "$INSTALL_DIR"
+# 2. OS check
+if [[ -f /etc/os-release ]]; then
+    . /etc/os-release
+    if [[ "$ID" != "ubuntu" ]]; then
+        echo -e "${YELLOW}[WARNING] This script is optimized for Ubuntu. Your OS ($ID) might not be fully supported.${NC}"
+        read -p "Continue anyway? (y/n) " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then exit 1; fi
+    fi
 else
-    echo -e "${BLUE}Target directory already exists. Using current directory contents to update.${NC}"
-    cp -r . "$INSTALL_DIR/"
+    echo -e "${RED}[ERROR] Could not detect OS. This script requires Ubuntu 22.04.${NC}"
+    exit 1
 fi
 
-cd "$INSTALL_DIR"
-chown -R $USER:$USER "$INSTALL_DIR"
+# --- Gathering Information ---
 
-echo -e "\n${GREEN}Step 5: Setting up Backend...${NC}"
-cd "$INSTALL_DIR/backend"
+echo -e "${YELLOW}>>> Configuration Setup${NC}"
+read -p "1. Enter your Domain Name (e.g., panel.infralyonix.com): " DOMAIN_NAME
+if [ -z "$DOMAIN_NAME" ]; then
+    echo -e "${RED}[ERROR] Domain name is required.${NC}"
+    exit 1
+fi
+
+read -p "2. Enter a name for the project folder [infralyonix]: " PROJECT_FOLDER
+PROJECT_FOLDER=${PROJECT_FOLDER:-infralyonix}
+
+read -s -p "3. Enter a secure PostgreSQL password: " DB_PASSWORD
+echo ""
+if [ -z "$DB_PASSWORD" ]; then
+    DB_PASSWORD=$(openssl rand -base64 12)
+    echo -e "${BLUE}[INFO] No password provided, generated: $DB_PASSWORD${NC}"
+fi
+
+# --- Execution ---
+
+echo -e "\n${GREEN}[1/8] Updating system and installing base tools...${NC}"
+apt-get update
+apt-get install -y curl wget git build-essential software-properties-common gnupg2 ca-certificates lsb-release
+
+echo -e "\n${GREEN}[2/8] Installing Node.js 20.x, PostgreSQL, Redis, and Nginx...${NC}"
+# Node.js
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+
+# PostgreSQL
+apt-get install -y postgresql postgresql-contrib
+systemctl start postgresql
+systemctl enable postgresql
+
+# Redis
+apt-get install -y redis-server
+systemctl start redis-server
+systemctl enable redis-server
+
+# Nginx
+apt-get install -y nginx certbot python3-certbot-nginx
+
+echo -e "\n${GREEN}[3/8] Configuring PostgreSQL Database...${NC}"
+# Create user and DB (ignore errors if exist)
+sudo -u postgres psql -c "CREATE USER infralyonixuser WITH PASSWORD '$DB_PASSWORD';" || true
+sudo -u postgres psql -c "ALTER USER infralyonixuser WITH PASSWORD '$DB_PASSWORD';"
+sudo -u postgres psql -c "CREATE DATABASE $PROJECT_FOLDER;" || true
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $PROJECT_FOLDER TO infralyonixuser;"
+sudo -u postgres psql -d $PROJECT_FOLDER -c "GRANT ALL ON SCHEMA public TO infralyonixuser;"
+
+echo -e "\n${GREEN}[4/8] Deploying Files...${NC}"
+INSTALL_PATH="/var/www/$PROJECT_FOLDER"
+
+if [ -d "$INSTALL_PATH" ]; then
+    echo -e "${YELLOW}[INFO] Project directory exists, updating files...${NC}"
+    cp -r . "$INSTALL_PATH"
+else
+    mkdir -p "$INSTALL_PATH"
+    cp -r . "$INSTALL_PATH"
+fi
+
+cd "$INSTALL_PATH"
+
+echo -e "\n${GREEN}[5/8] Setting up Backend...${NC}"
+cd "$INSTALL_PATH/backend"
 npm install
+
+# Generate JWT Secret
+JWT_SECRET=$(openssl rand -base64 32)
 
 # Create .env
 cat <<EOF > .env
-DATABASE_URL="postgresql://infralyonixuser:$DB_PASSWORD@localhost:5432/infralyonix?schema=public"
+DATABASE_URL="postgresql://infralyonixuser:$DB_PASSWORD@localhost:5432/$PROJECT_FOLDER?schema=public"
 JWT_SECRET="$JWT_SECRET"
 PORT=5000
 REDIS_URL="redis://localhost:6379"
@@ -71,11 +123,11 @@ EOF
 
 npx prisma generate
 npm run build
-npx prisma db push
+npx prisma db push --accept-data-loss
 npx prisma db seed
 
-echo -e "\n${GREEN}Step 6: Setting up Frontend...${NC}"
-cd "$INSTALL_DIR/frontend"
+echo -e "\n${GREEN}[6/8] Setting up Frontend...${NC}"
+cd "$INSTALL_PATH/frontend"
 npm install
 
 # Create .env
@@ -85,29 +137,29 @@ EOF
 
 npm run build
 
-echo -e "\n${GREEN}Step 7: Configuring PM2...${NC}"
+echo -e "\n${GREEN}[7/8] Configuring PM2 Process Manager...${NC}"
 npm install -g pm2
-cd "$INSTALL_DIR/backend"
+cd "$INSTALL_PATH/backend"
 pm2 delete infralyonix-api 2>/dev/null || true
 pm2 start dist/index.js --name infralyonix-api
 pm2 save
-pm2 startup | tail -n 1 | bash || true
+pm2 startup | grep "sudo" | bash || true
 
-echo -e "\n${GREEN}Step 8: Configuring Nginx...${NC}"
-NGINX_CONF="/etc/nginx/sites-available/infralyonix"
+echo -e "\n${GREEN}[8/8] Configuring Nginx Reverse Proxy...${NC}"
+NGINX_CONF="/etc/nginx/sites-available/$PROJECT_FOLDER"
 cat <<EOF > "$NGINX_CONF"
 server {
     listen 80;
     server_name $DOMAIN_NAME;
 
-    # Frontend (Static Files)
+    # Frontend
     location / {
-        root $INSTALL_DIR/frontend/dist;
+        root $INSTALL_PATH/frontend/dist;
         index index.html;
         try_files \$uri \$uri/ /index.html;
     }
 
-    # Backend API
+    # API Backend
     location /api {
         proxy_pass http://localhost:5000;
         proxy_http_version 1.1;
@@ -124,13 +176,23 @@ rm -f /etc/nginx/sites-enabled/default || true
 nginx -t
 systemctl restart nginx
 
-echo -e "\n${BLUE}====================================================${NC}"
-echo -e "${GREEN}       Installation Complete!                       ${NC}"
-echo -e "${BLUE}====================================================${NC}"
-echo -e "Your application is now available at: ${BLUE}http://$DOMAIN_NAME${NC}"
-echo -e "Admin Credentials:"
-echo -e "  - Email: ${BLUE}admin@infralyonix.com${NC}"
-echo -e "  - Password: ${BLUE}admin123${NC}"
+# Finalizing
+clear
+echo -e "${BLUE}####################################################${NC}"
+echo -e "${GREEN}#       INSTALLATION COMPLETE - INFRALYONIX        #${NC}"
+echo -e "${BLUE}####################################################${NC}"
+echo ""
+echo -e "Your platform is live at: ${BLUE}http://$DOMAIN_NAME${NC}"
 echo -e ""
-echo -e "To enable SSL, run: ${BLUE}certbot --nginx -d $DOMAIN_NAME${NC}"
-echo -e "${BLUE}====================================================${NC}"
+echo -e "${YELLOW}Next Steps:${NC}"
+echo -e "1. ${GREEN}Enable SSL (HTTPS):${NC} Run this command:"
+echo -e "   ${BLUE}certbot --nginx -d $DOMAIN_NAME${NC}"
+echo ""
+echo -e "2. ${GREEN}Admin Access:${NC}"
+echo -e "   - URL: http://$DOMAIN_NAME/login"
+echo -e "   - User: ${BLUE}admin@infralyonix.com${NC}"
+echo -e "   - Pass: ${BLUE}admin123${NC}"
+echo ""
+echo -e "3. ${GREEN}DB Details:${NC} User: ${BLUE}infralyonixuser${NC} | Pass: ${BLUE}$DB_PASSWORD${NC}"
+echo ""
+echo -e "${BLUE}####################################################${NC}"
