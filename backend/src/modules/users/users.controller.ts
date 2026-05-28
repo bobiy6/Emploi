@@ -60,14 +60,36 @@ export const deleteUser = async (req: any, res: Response) => {
   const { id } = req.params;
   const userId = parseInt(id as string);
   try {
-    // Correct manual cascade for account deletion
+    // Robust manual cascade for account deletion
+    // Order matters to satisfy foreign key constraints
     await prisma.$transaction([
-      prisma.ticketMessage.deleteMany({ where: { userId } }),
+      // 1. Delete ticket messages associated with user's tickets OR sent by the user
+      prisma.ticketMessage.deleteMany({
+        where: {
+          OR: [
+            { userId },
+            { ticket: { userId } }
+          ]
+        }
+      }),
+      // 2. Delete tickets owned by user
       prisma.ticket.deleteMany({ where: { userId } }),
-      prisma.log.deleteMany({ where: { userId } }),
+      // 3. Delete logs associated with user's services OR linked to the user
+      prisma.log.deleteMany({
+        where: {
+          OR: [
+            { userId },
+            { service: { userId } }
+          ]
+        }
+      }),
+      // 4. Delete invoices owned by user
       prisma.invoice.deleteMany({ where: { userId } }),
+      // 5. Delete services owned by user
       prisma.service.deleteMany({ where: { userId } }),
+      // 6. Delete orders owned by user
       prisma.order.deleteMany({ where: { userId } }),
+      // 7. Finally delete the user
       prisma.user.delete({ where: { id: userId } })
     ]);
     res.json({ message: 'User and all related data deleted successfully' });

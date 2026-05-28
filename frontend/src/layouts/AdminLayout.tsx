@@ -9,10 +9,10 @@ const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
   <Link
     to={to}
     className={cn(
-      'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-medium',
+      'flex items-center gap-3 px-6 py-4 rounded-2xl transition-all duration-300 group font-bold',
       active
-        ? 'bg-rose-600 text-white shadow-lg shadow-rose-200'
-        : 'text-gray-500 hover:bg-white hover:text-rose-600'
+        ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-xl shadow-rose-500/20 scale-[1.02]'
+        : 'text-gray-500 hover:bg-white hover:text-rose-600 hover:shadow-lg hover:shadow-gray-200/50'
     )}
   >
     <Icon className={cn('w-5 h-5', active ? 'text-white' : 'group-hover:text-rose-600')} />
@@ -49,14 +49,14 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   ].filter(item => !item.hide);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-[#FDF2F2]">
       {/* Sidebar */}
-      <aside className="w-72 border-r border-gray-200 bg-gray-50/80 backdrop-blur-md p-6 flex flex-col fixed h-full z-10">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center">
+      <aside className="w-80 border-r border-rose-100 bg-white/70 backdrop-blur-xl p-8 flex flex-col fixed h-full z-10">
+        <div className="flex items-center gap-4 mb-12 px-2">
+          <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-pink-700 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/20">
              <ShieldAlert className="text-white w-6 h-6" />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+          <span className="text-2xl font-black bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent tracking-tight">
             AdminPanel
           </span>
         </div>
@@ -87,9 +87,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-72">
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 px-10 flex items-center justify-between sticky top-0 z-20">
-          <h2 className="text-xl font-bold text-gray-800">
+      <main className="flex-1 ml-80">
+        <header className="h-24 bg-white/70 backdrop-blur-xl border-b border-rose-100 px-12 flex items-center justify-between sticky top-0 z-20">
+          <h2 className="text-2xl font-black text-gray-900 tracking-tight">
              {menuItems.find(m => m.to === location.pathname)?.label || 'Administration'}
           </h2>
           <div className="flex items-center gap-4">

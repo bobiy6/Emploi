@@ -2,6 +2,27 @@
 
 Ce guide vous explique comment déployer Infralyonix sur un VPS OVH avec Ubuntu 22.04 LTS.
 
+## 🚀 Installation Automatique (Recommandé)
+
+Pour installer Infralyonix automatiquement en une seule commande, exécutez le script suivant en tant que root :
+
+```bash
+chmod +x install.sh
+sudo ./install.sh
+```
+
+Le script s'occupera de :
+- Mettre à jour le système.
+- Installer toutes les dépendances (Node.js, PostgreSQL, Redis, Nginx).
+- Configurer la base de données.
+- Compiler le backend et le frontend.
+- Configurer PM2 pour la gestion des processus.
+- Configurer Nginx en tant que reverse proxy.
+
+---
+
+## 🛠️ Installation Manuelle (Étape par étape)
+
 ## 1. Mise à jour du système
 Connectez-vous en SSH à votre VPS et commencez par mettre à jour les paquets.
 ```bash
