@@ -95,16 +95,17 @@ sudo -u postgres psql -d $PROJECT_FOLDER -c "GRANT ALL ON SCHEMA public TO infra
 
 echo -e "\n${GREEN}[4/8] Deploying Files...${NC}"
 INSTALL_PATH="/var/www/$PROJECT_FOLDER"
+REPO_URL="https://github.com/bobiy6/Emploi.git"
 
 if [ -d "$INSTALL_PATH" ]; then
-    echo -e "${YELLOW}[INFO] Project directory exists, updating files...${NC}"
-    cp -r . "$INSTALL_PATH"
+    echo -e "${YELLOW}[INFO] Project directory exists. Updating...${NC}"
+    cd "$INSTALL_PATH"
+    git pull || echo -e "${YELLOW}[WARNING] Could not pull updates. Continuing...${NC}"
 else
-    mkdir -p "$INSTALL_PATH"
-    cp -r . "$INSTALL_PATH"
+    echo -e "${GREEN}[INFO] Cloning repository from $REPO_URL...${NC}"
+    git clone "$REPO_URL" "$INSTALL_PATH"
+    cd "$INSTALL_PATH"
 fi
-
-cd "$INSTALL_PATH"
 
 echo -e "\n${GREEN}[5/8] Setting up Backend...${NC}"
 cd "$INSTALL_PATH/backend"
