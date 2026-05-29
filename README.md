@@ -65,13 +65,15 @@ To connect a Pterodactyl Panel:
 - **Frontend**: React, Vite, Tailwind CSS, Lucide React, Axios.
 - **Database**: PostgreSQL (via Docker).
 
-## 🚀 Installation Rapide (One-Click)
+## 🚀 Installation Rapide (Automatique)
 
-Pour déployer Infralyonix automatiquement sur votre VPS (Ubuntu 22.04), exécutez simplement cette commande :
+Pour déployer Infralyonix **instantanément** sur votre VPS (Ubuntu 22.04) sans même télécharger les fichiers manuellement, exécutez cette commande :
 
 ```bash
-chmod +x install.sh && sudo ./install.sh
+curl -sSL https://raw.githubusercontent.com/bobiy6/Emploi/main/install.sh | sudo bash
 ```
+
+> **Note :** Si vous avez déjà les fichiers localement, vous pouvez aussi lancer : `chmod +x install.sh && sudo ./install.sh`
 
 Le script s'occupe de tout :
 - Installation de Node.js, PostgreSQL, Redis et Nginx.
