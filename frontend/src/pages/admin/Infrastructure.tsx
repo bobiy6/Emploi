@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { HardDrive, Plus, Trash2, Power, CheckCircle, XCircle } from 'lucide-react';
 import api from '../../api';
 
@@ -97,13 +98,15 @@ const Infrastructure = () => {
             <h3 className="text-xl font-bold mb-6">New Backend Server</h3>
             <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <Input label="Display Name" placeholder={form.type === 'PROXMOX' ? "e.g. Proxmox-Node-01" : "e.g. Game-Panel-Main"} value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
-               <div className="space-y-1">
-                  <label className="text-sm font-medium ml-1">Server Type</label>
-                  <select className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white font-bold" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                     <option value="PROXMOX">Proxmox VE (VPS)</option>
-                     <option value="PTERODACTYL">Pterodactyl (Games)</option>
-                  </select>
-               </div>
+               <Select
+                  label="Server Type"
+                  value={form.type}
+                  onChange={e => setForm({...form, type: e.target.value})}
+                  options={[
+                     { value: 'PROXMOX', label: 'Proxmox VE (VPS)' },
+                     { value: 'PTERODACTYL', label: 'Pterodactyl (Games)' }
+                  ]}
+               />
 
                <Input label="API URL" placeholder={form.type === 'PROXMOX' ? "https://ip:8006/api2/json" : "https://panel.example.com"} value={form.url} onChange={e => setForm({...form, url: e.target.value})} required />
 

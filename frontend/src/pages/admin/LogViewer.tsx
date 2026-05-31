@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { Select } from '../../components/ui/Select';
 import { Terminal, Search, Filter, ChevronLeft, ChevronRight, User, HardDrive, AlertCircle } from 'lucide-react';
 import api from '../../api';
 
@@ -75,28 +76,30 @@ const LogViewer = () => {
         </form>
 
         <div className="flex gap-2 w-full md:w-auto">
-          <select
-            className="flex-1 md:w-40 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none"
+          <Select
+            className="h-10 text-xs md:w-40"
             value={filters.type}
             onChange={(e) => setFilters({ ...filters, type: e.target.value, page: 1 })}
-          >
-            <option value="">All Types</option>
-            <option value="AUTH">Auth</option>
-            <option value="PROVISIONING">Provisioning</option>
-            <option value="BILLING">Billing</option>
-            <option value="SERVICE">Service</option>
-            <option value="API">API</option>
-          </select>
-          <select
-            className="flex-1 md:w-40 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none"
+            options={[
+               { value: '', label: 'All Types' },
+               { value: 'AUTH', label: 'Auth' },
+               { value: 'PROVISIONING', label: 'Provisioning' },
+               { value: 'BILLING', label: 'Billing' },
+               { value: 'SERVICE', label: 'Service' },
+               { value: 'API', label: 'API' }
+            ]}
+          />
+          <Select
+            className="h-10 text-xs md:w-40"
             value={filters.level}
             onChange={(e) => setFilters({ ...filters, level: e.target.value, page: 1 })}
-          >
-            <option value="">All Levels</option>
-            <option value="INFO">Info</option>
-            <option value="WARN">Warning</option>
-            <option value="ERROR">Error</option>
-          </select>
+            options={[
+               { value: '', label: 'All Levels' },
+               { value: 'INFO', label: 'Info' },
+               { value: 'WARN', label: 'Warning' },
+               { value: 'ERROR', label: 'Error' }
+            ]}
+          />
         </div>
       </div>
 
