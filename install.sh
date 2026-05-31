@@ -94,27 +94,38 @@ fi
 
 # --- Execution ---
 
+# Function to wait for apt locks
+wait_for_apt() {
+    echo -e "${YELLOW}[INFO] Waiting for system package locks to be released...${NC}"
+    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1 || fuser /var/cache/apt/archives/lock >/dev/null 2>&1; do
+        sleep 5
+    done
+}
+
+wait_for_apt
+
 echo -e "\n${GREEN}[1/8] Updating system and installing base tools...${NC}"
+export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y curl wget git build-essential software-properties-common gnupg2 ca-certificates lsb-release
+apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" curl wget git build-essential software-properties-common gnupg2 ca-certificates lsb-release
 
 echo -e "\n${GREEN}[2/8] Installing Node.js 20.x, PostgreSQL, Redis, and Nginx...${NC}"
 # Node.js
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs
+apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" nodejs
 
 # PostgreSQL
-apt-get install -y postgresql postgresql-contrib
+apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" postgresql postgresql-contrib
 systemctl start postgresql
 systemctl enable postgresql
 
 # Redis
-apt-get install -y redis-server
+apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" redis-server
 systemctl start redis-server
 systemctl enable redis-server
 
 # Nginx
-apt-get install -y nginx certbot python3-certbot-nginx
+apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" nginx certbot python3-certbot-nginx
 
 echo -e "\n${GREEN}[3/8] Configuring PostgreSQL Database...${NC}"
 # Create user and DB (ignore errors if exist)
