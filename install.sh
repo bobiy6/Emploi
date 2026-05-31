@@ -33,7 +33,7 @@ if [[ -f /etc/os-release ]]; then
     . /etc/os-release
     if [[ "$ID" != "ubuntu" ]]; then
         echo -e "${YELLOW}[WARNING] This script is optimized for Ubuntu. Your OS ($ID) might not be fully supported.${NC}"
-        read -p "Continue anyway? (y/n) " -n 1 -r
+        read -p "Continue anyway? (y/n) " -n 1 -r < /dev/tty
         echo ""
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then exit 1; fi
     fi
@@ -45,16 +45,22 @@ fi
 # --- Gathering Information ---
 
 echo -e "${YELLOW}>>> Configuration Setup${NC}"
-read -p "1. Enter your Domain Name (e.g., panel.infralyonix.com): " DOMAIN_NAME
+
+# Detect Public IP
+PUBLIC_IP=$(hostname -I | awk '{print $1}')
+
+read -p "1. Enter your Domain Name (e.g., panel.infralyonix.com) [$PUBLIC_IP]: " DOMAIN_NAME < /dev/tty
+DOMAIN_NAME=${DOMAIN_NAME:-$PUBLIC_IP}
+
 if [ -z "$DOMAIN_NAME" ]; then
     echo -e "${RED}[ERROR] Domain name is required.${NC}"
     exit 1
 fi
 
-read -p "2. Enter a name for the project folder [infralyonix]: " PROJECT_FOLDER
+read -p "2. Enter a name for the project folder [infralyonix]: " PROJECT_FOLDER < /dev/tty
 PROJECT_FOLDER=${PROJECT_FOLDER:-infralyonix}
 
-read -s -p "3. Enter a secure PostgreSQL password: " DB_PASSWORD
+read -s -p "3. Enter a secure PostgreSQL password (leave blank for random): " DB_PASSWORD < /dev/tty
 echo ""
 if [ -z "$DB_PASSWORD" ]; then
     DB_PASSWORD=$(openssl rand -base64 12)
