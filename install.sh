@@ -33,7 +33,7 @@ if [[ -f /etc/os-release ]]; then
     . /etc/os-release
     if [[ "$ID" != "ubuntu" ]]; then
         echo -e "${YELLOW}[WARNING] This script is optimized for Ubuntu. Your OS ($ID) might not be fully supported.${NC}"
-        read -p "Continue anyway? (y/n) " -n 1 -r
+        read -p "Continue anyway? (y/n) " -n 1 -r < /dev/tty
         echo ""
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then exit 1; fi
     fi
@@ -45,20 +45,51 @@ fi
 # --- Gathering Information ---
 
 echo -e "${YELLOW}>>> Configuration Setup${NC}"
-read -p "1. Enter your Domain Name (e.g., panel.infralyonix.com): " DOMAIN_NAME
+
+# Detect Public IP
+PUBLIC_IP=$(hostname -I | awk '{print $1}')
+
+read -p "1. Enter your Domain Name (e.g., panel.infralyonix.com) [$PUBLIC_IP]: " DOMAIN_NAME < /dev/tty
+DOMAIN_NAME=${DOMAIN_NAME:-$PUBLIC_IP}
+
 if [ -z "$DOMAIN_NAME" ]; then
     echo -e "${RED}[ERROR] Domain name is required.${NC}"
     exit 1
 fi
 
-read -p "2. Enter a name for the project folder [infralyonix]: " PROJECT_FOLDER
+read -p "2. Enter a name for the project folder [infralyonix]: " PROJECT_FOLDER < /dev/tty
 PROJECT_FOLDER=${PROJECT_FOLDER:-infralyonix}
 
-read -s -p "3. Enter a secure PostgreSQL password: " DB_PASSWORD
+read -s -p "3. Enter a secure PostgreSQL password (leave blank for random): " DB_PASSWORD < /dev/tty
 echo ""
 if [ -z "$DB_PASSWORD" ]; then
     DB_PASSWORD=$(openssl rand -base64 12)
-    echo -e "${BLUE}[INFO] No password provided, generated: $DB_PASSWORD${NC}"
+    echo -e "${BLUE}[INFO] No password provided, generated random password.${NC}"
+fi
+
+read -p "4. Enter the Backend Port [5000]: " BACKEND_PORT < /dev/tty
+BACKEND_PORT=${BACKEND_PORT:-5000}
+
+read -s -p "5. Enter a JWT Secret (leave blank for random): " JWT_SECRET < /dev/tty
+echo ""
+if [ -z "$JWT_SECRET" ]; then
+    JWT_SECRET=$(openssl rand -base64 32)
+    echo -e "${BLUE}[INFO] No JWT secret provided, generated random secret.${NC}"
+fi
+
+# --- Confirmation ---
+
+echo -e "\n${YELLOW}>>> Installation Summary${NC}"
+echo -e "${BLUE}Domain Name:${NC}    $DOMAIN_NAME"
+echo -e "${BLUE}Project Folder:${NC} $PROJECT_FOLDER"
+echo -e "${BLUE}Backend Port:${NC}   $BACKEND_PORT"
+echo -e "${BLUE}DB Password:${NC}    ${YELLOW}********${NC}"
+echo -e "${BLUE}JWT Secret:${NC}     ${YELLOW}********${NC}"
+echo ""
+read -p "Proceed with installation? (y/n): " CONFIRM < /dev/tty
+if [[ ! $CONFIRM =~ ^[Yy]$ ]]; then
+    echo -e "${RED}[INFO] Installation cancelled by user.${NC}"
+    exit 0
 fi
 
 # --- Execution ---
@@ -111,14 +142,11 @@ echo -e "\n${GREEN}[5/8] Setting up Backend...${NC}"
 cd "$INSTALL_PATH/backend"
 npm install
 
-# Generate JWT Secret
-JWT_SECRET=$(openssl rand -base64 32)
-
 # Create .env
 cat <<EOF > .env
 DATABASE_URL="postgresql://infralyonixuser:$DB_PASSWORD@localhost:5432/$PROJECT_FOLDER?schema=public"
 JWT_SECRET="$JWT_SECRET"
-PORT=5000
+PORT=$BACKEND_PORT
 REDIS_URL="redis://localhost:6379"
 EOF
 
@@ -162,7 +190,7 @@ server {
 
     # API Backend
     location /api {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://localhost:$BACKEND_PORT;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
