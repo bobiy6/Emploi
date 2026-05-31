@@ -77,6 +77,17 @@ if [ -z "$JWT_SECRET" ]; then
     echo -e "${BLUE}[INFO] No JWT secret provided, generated random secret.${NC}"
 fi
 
+read -p "6. Enable SSL (HTTPS) automatically? (y/n) [y]: " ENABLE_SSL < /dev/tty
+ENABLE_SSL=${ENABLE_SSL:-y}
+
+if [[ $ENABLE_SSL =~ ^[Yy]$ ]]; then
+    read -p "7. Enter your Email for SSL notifications: " SSL_EMAIL < /dev/tty
+    if [ -z "$SSL_EMAIL" ]; then
+        echo -e "${RED}[ERROR] Email is required for SSL registration.${NC}"
+        exit 1
+    fi
+fi
+
 # --- Confirmation ---
 
 echo -e "\n${YELLOW}>>> Installation Summary${NC}"
@@ -85,6 +96,10 @@ echo -e "${BLUE}Project Folder:${NC} $PROJECT_FOLDER"
 echo -e "${BLUE}Backend Port:${NC}   $BACKEND_PORT"
 echo -e "${BLUE}DB Password:${NC}    ${YELLOW}********${NC}"
 echo -e "${BLUE}JWT Secret:${NC}     ${YELLOW}********${NC}"
+echo -e "${BLUE}Enable SSL:${NC}     $ENABLE_SSL"
+if [[ $ENABLE_SSL =~ ^[Yy]$ ]]; then
+    echo -e "${BLUE}SSL Email:${NC}      $SSL_EMAIL"
+fi
 echo ""
 read -p "Proceed with installation? (y/n): " CONFIRM < /dev/tty
 if [[ ! $CONFIRM =~ ^[Yy]$ ]]; then
@@ -216,18 +231,30 @@ rm -f /etc/nginx/sites-enabled/default || true
 nginx -t
 systemctl restart nginx
 
+# SSL Configuration
+if [[ $ENABLE_SSL =~ ^[Yy]$ ]]; then
+    echo -e "\n${GREEN}[9/9] Configuring SSL with Certbot...${NC}"
+    certbot --nginx -d "$DOMAIN_NAME" --non-interactive --agree-tos -m "$SSL_EMAIL" --redirect || echo -e "${RED}[ERROR] SSL configuration failed. Continuing...${NC}"
+fi
+
 # Finalizing
 clear
 echo -e "${BLUE}####################################################${NC}"
 echo -e "${GREEN}#       INSTALLATION COMPLETE - INFRALYONIX        #${NC}"
 echo -e "${BLUE}####################################################${NC}"
 echo ""
-echo -e "Your platform is live at: ${BLUE}http://$DOMAIN_NAME${NC}"
+if [[ $ENABLE_SSL =~ ^[Yy]$ ]]; then
+    echo -e "Your platform is live at: ${BLUE}https://$DOMAIN_NAME${NC}"
+else
+    echo -e "Your platform is live at: ${BLUE}http://$DOMAIN_NAME${NC}"
+fi
 echo -e ""
 echo -e "${YELLOW}Next Steps:${NC}"
-echo -e "1. ${GREEN}Enable SSL (HTTPS):${NC} Run this command:"
-echo -e "   ${BLUE}certbot --nginx -d $DOMAIN_NAME${NC}"
-echo ""
+if [[ ! $ENABLE_SSL =~ ^[Yy]$ ]]; then
+    echo -e "1. ${GREEN}Enable SSL (HTTPS):${NC} Run this command:"
+    echo -e "   ${BLUE}certbot --nginx -d $DOMAIN_NAME${NC}"
+    echo ""
+fi
 echo -e "2. ${GREEN}Admin Access:${NC}"
 echo -e "   - URL: http://$DOMAIN_NAME/login"
 echo -e "   - User: ${BLUE}admin@infralyonix.com${NC}"
