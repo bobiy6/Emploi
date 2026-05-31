@@ -4,6 +4,7 @@ import api from '../../api';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { Select } from '../../components/ui/Select';
 
 const Accounting = () => {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -66,11 +67,14 @@ const Accounting = () => {
       <Card className="p-0 border-none overflow-hidden shadow-xl">
            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 className="font-bold text-gray-900">Complete Invoice Ledger</h3>
-              <div className="flex gap-2">
-                 <select className="bg-white border border-gray-200 rounded-lg px-3 py-1 text-xs font-bold">
-                    <option>All Months</option>
-                    <option>Current Month</option>
-                 </select>
+              <div className="flex gap-2 w-48">
+                 <Select
+                    options={[
+                       { value: 'all', label: 'All Months' },
+                       { value: 'current', label: 'Current Month' }
+                    ]}
+                    className="h-9 text-xs"
+                 />
               </div>
            </div>
            <table className="w-full text-left">

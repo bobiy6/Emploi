@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { ShoppingBag, FolderTree, Plus, Edit, Trash2, Package, Layers, Settings, Database, Activity, HardDrive } from 'lucide-react';
 import api from '../../api';
 
@@ -202,87 +203,77 @@ const ProductCatalog = () => {
                   <p className="text-[10px] text-gray-400 italic">If a duration is left blank, it won't be available to customers.</p>
                </div>
 
-               <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700 ml-1">Product Type</label>
-                  <select
-                     className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-rose-500 transition-all outline-none text-sm"
-                     value={type}
-                     onChange={(e) => setType(e.target.value)}
-                  >
-                     <option value="VPS">VPS Hosting</option>
-                     <option value="GAME">Game Server</option>
-                  </select>
-               </div>
+               <Select
+                  label="Product Type"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  options={[
+                     { value: 'VPS', label: 'VPS Hosting' },
+                     { value: 'GAME', label: 'Game Server' }
+                  ]}
+               />
 
-               <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700 ml-1">Category</label>
-                  <select
-                     className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-rose-500 transition-all outline-none text-sm"
-                     value={categoryId}
-                     onChange={(e) => setCategoryId(e.target.value)}
-                     required
-                  >
-                     <option value="">Select Category</option>
-                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-               </div>
+               <Select
+                  label="Category"
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  options={[
+                     { value: '', label: 'Select Category' },
+                     ...categories.map(c => ({ value: c.id, label: c.name }))
+                  ]}
+                  required
+               />
 
                {type === 'GAME' && (
                   <div className="md:col-span-2 space-y-8 mt-4 pt-8 border-t-2 border-gray-100">
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-1">
-                           <label className="block text-sm font-black text-gray-400 uppercase tracking-widest ml-1">Pterodactyl Node</label>
-                           <select
-                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
-                              value={selectedPveServer}
-                              onChange={(e) => setSelectedPveServer(e.target.value)}
-                              required
-                           >
-                              <option value="">Select Panel Server</option>
-                              {pveServers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                           </select>
-                        </div>
+                        <Select
+                           label="Pterodactyl Node"
+                           value={selectedPveServer}
+                           onChange={(e) => setSelectedPveServer(e.target.value)}
+                           options={[
+                              { value: '', label: 'Select Panel Server' },
+                              ...pveServers.map(s => ({ value: s.id, label: s.name }))
+                           ]}
+                           required
+                        />
 
-                        <div className="space-y-1">
-                           <label className="block text-sm font-black text-gray-400 uppercase tracking-widest ml-1">Nest</label>
-                           <select
-                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
-                              onChange={(e) => {
-                                 const nest = metadata?.nests.find((n:any) => n.id === parseInt(e.target.value));
-                                 setSelectedNest(nest);
-                                 setSelectedEgg(null);
-                              }}
-                              required
-                           >
-                              <option value="">Select Nest</option>
-                              {metadata?.nests.map((n:any) => <option key={n.id} value={n.id}>{n.name}</option>)}
-                           </select>
-                        </div>
+                        <Select
+                           label="Nest"
+                           onChange={(e) => {
+                              const nest = metadata?.nests.find((n:any) => n.id === parseInt(e.target.value));
+                              setSelectedNest(nest);
+                              setSelectedEgg(null);
+                           }}
+                           options={[
+                              { value: '', label: 'Select Nest' },
+                              ...(metadata?.nests.map((n:any) => ({ value: n.id, label: n.name })) || [])
+                           ]}
+                           required
+                        />
 
-                        <div className="space-y-1">
-                           <label className="block text-sm font-black text-gray-400 uppercase tracking-widest ml-1">Egg</label>
-                           <select
-                              className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
-                              onChange={(e) => {
-                                 const egg = selectedNest?.eggs.find((eg:any) => eg.id === parseInt(e.target.value));
-                                 setSelectedEgg(egg);
-                                 const env: any = {};
-                                 egg?.relationships?.variables?.data.forEach((v: any) => {
-                                    env[v.attributes.env_variable] = v.attributes.default_value;
-                                 });
-                                 setGameConfig({
-                                    ...gameConfig,
-                                    environment: env,
-                                    startup: egg.startup,
-                                    docker_image: egg.docker_image
-                                 });
-                              }}
-                              required
-                           >
-                              <option value="">Select Egg</option>
-                              {selectedNest?.eggs.map((e:any) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                           </select>
-                        </div>
+                        <Select
+                           label="Egg"
+                           onChange={(e) => {
+                              const egg = selectedNest?.eggs.find((eg:any) => eg.id === parseInt(e.target.value));
+                              setSelectedEgg(egg);
+                              const env: any = {};
+                              egg?.relationships?.variables?.data.forEach((v: any) => {
+                                 env[v.attributes.env_variable] = v.attributes.default_value;
+                              });
+                              setGameConfig({
+                                 ...gameConfig,
+                                 environment: env,
+                                 startup: egg.startup,
+                                 docker_image: egg.docker_image
+                              });
+                           }}
+                           options={[
+                              { value: '', label: 'Select Egg' },
+                              ...(selectedNest?.eggs.map((e:any) => ({ value: e.id, label: e.name })) || [])
+                           ]}
+                           required
+                        />
                      </div>
 
                      {selectedEgg && (
@@ -360,30 +351,26 @@ const ProductCatalog = () => {
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                  {gameConfig.deploy_mode === 'location' ? (
-                                    <div className="space-y-1">
-                                       <label className="block text-sm font-medium text-gray-700 ml-1">Select Location</label>
-                                       <select
-                                          className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
-                                          value={gameConfig.location_id}
-                                          onChange={e => setGameConfig({...gameConfig, location_id: e.target.value})}
-                                       >
-                                          <option value="">Select Location</option>
-                                          {metadata?.locations.map((l:any) => <option key={l.id} value={l.id}>{l.short} - {l.long}</option>)}
-                                       </select>
-                                    </div>
+                                    <Select
+                                       label="Select Location"
+                                       value={gameConfig.location_id}
+                                       onChange={e => setGameConfig({...gameConfig, location_id: e.target.value})}
+                                       options={[
+                                          { value: '', label: 'Select Location' },
+                                          ...(metadata?.locations.map((l:any) => ({ value: l.id, label: `${l.short} - ${l.long}` })) || [])
+                                       ]}
+                                    />
                                  ) : (
                                     <>
-                                       <div className="space-y-1">
-                                          <label className="block text-sm font-medium text-gray-700 ml-1">Select Node</label>
-                                          <select
-                                             className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white"
-                                             value={gameConfig.node_id}
-                                             onChange={e => setGameConfig({...gameConfig, node_id: e.target.value})}
-                                          >
-                                             <option value="">Select Node</option>
-                                             {metadata?.nodes.map((n:any) => <option key={n.id} value={n.id}>{n.name}</option>)}
-                                          </select>
-                                       </div>
+                                       <Select
+                                          label="Select Node"
+                                          value={gameConfig.node_id}
+                                          onChange={e => setGameConfig({...gameConfig, node_id: e.target.value})}
+                                          options={[
+                                             { value: '', label: 'Select Node' },
+                                             ...(metadata?.nodes.map((n:any) => ({ value: n.id, label: n.name })) || [])
+                                          ]}
+                                       />
                                        <Input label="Allocation ID" placeholder="e.g. 1" value={gameConfig.allocation_id} onChange={e => setGameConfig({...gameConfig, allocation_id: e.target.value})} />
                                     </>
                                  )}
@@ -423,7 +410,7 @@ const ProductCatalog = () => {
                        <tr key={prod.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="px-8 py-6">
                              <div className="flex items-center gap-4">
-                                <div className="p-2 bg-rose-50 rounded-lg"><Package className="w-4 h-4 text-rose-600" /></div>
+                                <div className="p-2 bg-blue-50 rounded-lg"><Package className="w-4 h-4 text-[#0050d7]" /></div>
                                 <span className="font-bold text-gray-900">{prod.name}</span>
                              </div>
                           </td>

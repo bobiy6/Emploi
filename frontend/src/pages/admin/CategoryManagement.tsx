@@ -63,9 +63,9 @@ const CategoryManagement = () => {
       </div>
 
       {showCreate && (
-         <Card className="p-8 border-2 border-rose-100 bg-rose-50/20 shadow-xl overflow-hidden">
+         <Card className="p-8 border-none shadow-xl overflow-hidden">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-               <FolderTree className="w-5 h-5 text-rose-600" /> {editingCategory ? 'Edit Category' : 'New Category'}
+               <FolderTree className="w-5 h-5 text-[#0050d7]" /> {editingCategory ? 'Edit Category' : 'New Category'}
             </h3>
             <form onSubmit={handleSave} className="space-y-6">
                <Input label="Category Name" placeholder="e.g., Cloud Hosting" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -80,9 +80,9 @@ const CategoryManagement = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
          {categories.map(cat => (
-            <Card key={cat.id} className="hover:shadow-lg transition-all">
+            <Card key={cat.id} className="hover:shadow-lg transition-all border-none shadow-md">
                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 bg-rose-50 rounded-xl text-rose-600">
+                  <div className="p-3 bg-blue-50 rounded-xl text-[#0050d7]">
                      <FolderTree className="w-6 h-6" />
                   </div>
                   <div className="flex gap-2">

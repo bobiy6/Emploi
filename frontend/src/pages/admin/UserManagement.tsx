@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Users, Mail, DollarSign, LogIn, Edit, Search, UserCheck, Plus, Trash2 } from 'lucide-react';
 import api from '../../api';
 import { useNavigate } from 'react-router-dom';
@@ -122,17 +123,15 @@ const UserManagement = () => {
                   <Input label="Name" value={adminForm.name} onChange={e => setAdminForm({...adminForm, name: e.target.value})} required />
                   <Input label="Email" type="email" value={adminForm.email} onChange={e => setAdminForm({...adminForm, email: e.target.value})} required />
                   <Input label="Password" type="password" placeholder={editingUser ? 'Leave blank to keep same' : 'Enter password'} value={adminForm.password} onChange={e => setAdminForm({...adminForm, password: e.target.value})} required={!editingUser} />
-                  <div className="space-y-1">
-                     <label className="text-sm font-medium ml-1">Staff Role</label>
-                     <select
-                        className="w-full h-11 px-4 rounded-xl border border-gray-200"
-                        value={adminForm.role}
-                        onChange={e => setAdminForm({...adminForm, role: e.target.value})}
-                     >
-                        <option value="ADMIN">Full Administrator</option>
-                        <option value="SUPPORT">Support Agent (Limited)</option>
-                     </select>
-                  </div>
+                  <Select
+                     label="Staff Role"
+                     value={adminForm.role}
+                     onChange={e => setAdminForm({...adminForm, role: e.target.value})}
+                     options={[
+                        { value: 'ADMIN', label: 'Full Administrator' },
+                        { value: 'SUPPORT', label: 'Support Agent (Limited)' }
+                     ]}
+                  />
                   <div className="flex gap-3 pt-4">
                      <Button variant="ghost" className="flex-1" onClick={() => { setShowAdminModal(false); setEditingUser(null); setAdminForm({ name: '', email: '', password: '', role: 'SUPPORT' }); }}>Cancel</Button>
                      <Button type="submit" className="flex-1">{editingUser ? 'Update User' : 'Create Account'}</Button>

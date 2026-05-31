@@ -9,15 +9,24 @@ const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
   <Link
     to={to}
     className={cn(
-      'flex items-center gap-3 px-6 py-4 rounded-2xl transition-all duration-300 group font-bold',
+      'flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group text-sm font-medium',
       active
-        ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-xl shadow-rose-500/20 scale-[1.02]'
-        : 'text-gray-500 hover:bg-white hover:text-rose-600 hover:shadow-lg hover:shadow-gray-200/50'
+        ? 'bg-[#0050d7] text-white shadow-md'
+        : 'text-gray-400 hover:text-white hover:bg-white/5'
     )}
   >
-    <Icon className={cn('w-5 h-5', active ? 'text-white' : 'group-hover:text-rose-600')} />
+    <Icon className={cn('w-4 h-4 transition-colors', active ? 'text-white' : 'text-gray-400 group-hover:text-white')} />
     {label}
   </Link>
+);
+
+const NavSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="mb-6">
+    <h3 className="px-4 mb-2 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+      {title}
+    </h3>
+    <div className="space-y-1">{children}</div>
+  </div>
 );
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
@@ -32,43 +41,46 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
 
   const isSupport = user?.role === 'SUPPORT';
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Stats Overview', to: '/admin', hide: false },
-    { icon: Users, label: 'User Management', to: '/admin/users', hide: isSupport },
-    { icon: FolderTree, label: 'Categories', to: '/admin/categories', hide: isSupport },
-    { icon: ShoppingBag, label: 'Product List', to: '/admin/products', hide: isSupport },
-    { icon: ClipboardList, label: 'Order List', to: '/admin/orders', hide: isSupport },
-    { icon: ShieldAlert, label: 'Active Services', to: '/admin/services', hide: isSupport },
-    { icon: LifeBuoy, label: 'Support Tickets', to: '/admin/tickets', hide: false },
-    { icon: BarChart3, label: 'Accounting', to: '/admin/accounting', hide: isSupport },
-    { icon: HardDrive, label: 'Infrastructure', to: '/admin/infrastructure', hide: isSupport },
-    { icon: Terminal, label: 'System Logs', to: '/admin/logs', hide: isSupport },
-    { icon: Database, label: 'Database Access', to: '/admin/db', hide: isSupport },
-    {icon: Mail, label: 'Email Management', to: '/admin/email', hide: isSupport },
-    { icon: Settings, label: 'Module Settings', to: '/admin/settings', hide: isSupport },
-  ].filter(item => !item.hide);
-
   return (
-    <div className="flex min-h-screen bg-[#FDF2F2]">
+    <div className="flex min-h-screen bg-[#f5f7fa]">
       {/* Sidebar */}
-      <aside className="w-80 border-r border-rose-100 bg-white/70 backdrop-blur-xl p-8 flex flex-col fixed h-full z-10">
-        <div className="flex items-center gap-4 mb-12 px-2">
-          <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-pink-700 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-500/20">
-             <ShieldAlert className="text-white w-6 h-6" />
+      <aside className="w-64 bg-[#001747] flex flex-col fixed h-full z-30 shadow-2xl">
+        <div className="p-6 mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#0050d7] rounded flex items-center justify-center shadow-lg shadow-blue-500/20">
+               <ShieldAlert className="text-white w-5 h-5" />
+            </div>
+            <span className="text-lg font-black text-white tracking-tight">
+              Infralyonix <span className="text-[10px] text-blue-400 ml-1 font-bold">ADMIN</span>
+            </span>
           </div>
-          <span className="text-2xl font-black bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent tracking-tight">
-            AdminPanel
-          </span>
         </div>
 
-        <nav className="flex-1 space-y-2 overflow-y-auto">
-          {menuItems.map((item) => (
-            <SidebarItem
-              key={item.to}
-              {...item}
-              active={location.pathname === item.to}
-            />
-          ))}
+        <nav className="flex-1 px-4 overflow-y-auto scrollbar-hide">
+          <NavSection title="Management">
+            <SidebarItem icon={LayoutDashboard} label="Overview" to="/admin" active={location.pathname === '/admin'} />
+            {!isSupport && <SidebarItem icon={Users} label="Users" to="/admin/users" active={location.pathname === '/admin/users'} />}
+            {!isSupport && <SidebarItem icon={ShoppingBag} label="Products" to="/admin/products" active={location.pathname === '/admin/products'} />}
+            {!isSupport && <SidebarItem icon={FolderTree} label="Categories" to="/admin/categories" active={location.pathname === '/admin/categories'} />}
+            {!isSupport && <SidebarItem icon={ClipboardList} label="Orders" to="/admin/orders" active={location.pathname === '/admin/orders'} />}
+          </NavSection>
+
+          <NavSection title="Infrastructure">
+            {!isSupport && <SidebarItem icon={HardDrive} label="Provisioning" to="/admin/infrastructure" active={location.pathname === '/admin/infrastructure'} />}
+            <SidebarItem icon={ShieldAlert} label="Services" to="/admin/services" active={location.pathname === '/admin/services'} />
+          </NavSection>
+
+          <NavSection title="System">
+            <SidebarItem icon={LifeBuoy} label="Tickets" to="/admin/tickets" active={location.pathname === '/admin/tickets'} />
+            {!isSupport && <SidebarItem icon={Mail} label="Email Manager" to="/admin/email" active={location.pathname === '/admin/email'} />}
+            {!isSupport && <SidebarItem icon={BarChart3} label="Accounting" to="/admin/accounting" active={location.pathname === '/admin/accounting'} />}
+            {!isSupport && <SidebarItem icon={Terminal} label="System Logs" to="/admin/logs" active={location.pathname === '/admin/logs'} />}
+          </NavSection>
+
+          <NavSection title="Settings">
+            {!isSupport && <SidebarItem icon={Database} label="Database" to="/admin/db" active={location.pathname === '/admin/db'} />}
+            {!isSupport && <SidebarItem icon={Settings} label="Settings" to="/admin/settings" active={location.pathname === '/admin/settings'} />}
+          </NavSection>
         </nav>
 
         <div className="mt-auto space-y-4 pt-6 border-t border-gray-200">
@@ -87,19 +99,28 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-80">
-        <header className="h-24 bg-white/70 backdrop-blur-xl border-b border-rose-100 px-12 flex items-center justify-between sticky top-0 z-20">
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-             {menuItems.find(m => m.to === location.pathname)?.label || 'Administration'}
-          </h2>
+      <main className="flex-1 ml-64">
+        <header className="h-16 bg-white border-b border-gray-200 px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4">
-             <Badge variant="danger" className="font-black tracking-widest text-[10px] uppercase">
-                {user?.role === 'ADMIN' ? 'FULL ADMINISTRATOR' : 'SUPPORT AGENT'}
-             </Badge>
+            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+               Admin Workspace
+            </h2>
+          </div>
+          <div className="flex items-center gap-6">
+             <div className="text-right">
+                <p className="text-xs font-bold text-gray-900">{user?.name}</p>
+                <p className="text-[10px] text-gray-500 font-medium">{user?.role}</p>
+             </div>
+             <button
+               onClick={handleLogout}
+               className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+             >
+               <LogOut className="w-5 h-5" />
+             </button>
           </div>
         </header>
 
-        <div className="p-10 max-w-7xl mx-auto">
+        <div className="p-8 max-w-[1600px] mx-auto">
           {children}
         </div>
       </main>
