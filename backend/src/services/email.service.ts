@@ -34,17 +34,27 @@ export interface EmailOptions {
 
 export const sendEmail = async (options: EmailOptions) => {
     try {
-        await emailQueue.add('send-email', options, {
-            attempts: 3,
+        const job = await emailQueue.add('send-email', options, {
+            attempts: 5, // Increased attempts for reliability
             delay: options.delay || 0,
+            removeOnComplete: true, // Keep DB clean
+            removeOnFail: false, // Keep failed for manual retry/analysis
             backoff: {
                 type: 'exponential',
-                delay: 1000,
+                delay: 5000, // Longer initial delay for rate limits
             },
         });
+        console.log(`[EMAIL] Enqueued job ${job.id} for ${options.to} [${options.templateName}]`);
     } catch (error) {
         console.error('[EMAIL QUEUE ERROR]:', error);
-        // Do not throw to prevent breaking the main request flow
+        // Fallback: log to DB immediately if queue fails
+        const { createLog } = await import('../utils/logger.js');
+        createLog({
+            type: 'EMAIL',
+            level: 'ERROR',
+            message: `Queue failure: Could not enqueue email for ${options.to}`,
+            details: { error: (error as Error).message, options }
+        });
     }
 };
 
