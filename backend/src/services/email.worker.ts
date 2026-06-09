@@ -38,20 +38,20 @@ export const emailWorker = new Worker(
             });
 
             await createLog({
-                type: 'API',
+                type: 'EMAIL',
                 level: 'INFO',
-                message: `Email sent to ${to} [${templateName}]`,
-                details: { subject, to, templateName }
+                message: `Email sent successfully: ${to} [${templateName}]`,
+                details: { subject, to, templateName, status: 'DELIVERED' }
             });
 
-            console.log(`Email sent successfully to ${to} [Template: ${templateName}]`);
+            console.log(`[EMAIL] Successfully sent to ${to} using template ${templateName}`);
         } catch (error: any) {
-            console.error(`Failed to send email to ${to}:`, error);
+            console.error(`[EMAIL ERROR] Failed to send to ${to}:`, error);
             await createLog({
-                type: 'ERROR',
+                type: 'EMAIL',
                 level: 'ERROR',
-                message: `Failed to send email to ${to} [${templateName}]`,
-                details: { error: error.message }
+                message: `Failed to send email: ${to} [${templateName}]`,
+                details: { error: error.message, to, templateName, status: 'FAILED' }
             });
             throw error;
         }
@@ -62,9 +62,9 @@ export const emailWorker = new Worker(
 );
 
 emailWorker.on('completed', (job) => {
-    console.log(`Job ${job.id} completed successfully`);
+    console.log(`[EMAIL WORKER] Job ${job.id} (${job.data.templateName}) completed`);
 });
 
 emailWorker.on('failed', (job, err) => {
-    console.error(`Job ${job?.id} failed with error: ${err.message}`);
+    console.error(`[EMAIL WORKER] Job ${job?.id} failed: ${err.message}`);
 });
