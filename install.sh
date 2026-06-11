@@ -187,9 +187,10 @@ npm install
 
 # Create .env
 cat <<EOF > .env
-VITE_API_URL=https://$DOMAIN_NAME/api
+VITE_API_URL=/api
 EOF
 
+export VITE_API_URL=/api
 npm run build
 
 echo -e "\n${GREEN}[7/8] Configuring PM2 Process Manager...${NC}"
@@ -216,7 +217,7 @@ server {
 
     # API Backend
     location /api {
-        proxy_pass http://localhost:$BACKEND_PORT;
+        proxy_pass http://127.0.0.1:$BACKEND_PORT;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
