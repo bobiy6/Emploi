@@ -35,6 +35,7 @@ export const emailWorker = new Worker(
                 to,
                 subject,
                 html,
+                attachments: job.data.attachments,
             });
 
             await createLog({

@@ -93,31 +93,31 @@ router.post('/templates/sync', authMiddleware, adminMiddleware, async (req, res)
         {
           name: 'WELCOME_VERIFICATION',
           subject: 'Bienvenue chez Infralyonix !',
-          content: '<h1>Bonjour {{name}}</h1><p>Merci de vous être inscrit. Veuillez vérifier votre email en cliquant ici : <a href="{{verificationUrl}}">{{verificationUrl}}</a></p>',
+          content: '<h1>Bonjour {{name}},</h1><p>Merci d\'avoir rejoint Infralyonix. Nous sommes ravis de vous compter parmi nos clients.</p><p>Pour commencer à utiliser nos services, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :</p><p style="text-align: center;"><a href="{{verificationUrl}}" class="button">Vérifier mon compte</a></p><p>Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :<br>{{verificationUrl}}</p>',
           type: 'TRANSACTIONAL'
         },
         {
           name: 'SERVICE_READY',
           subject: 'Votre service {{productName}} est prêt',
-          content: '<h1>Bonne nouvelle !</h1><p>Votre service {{productName}} a été provisionné avec succès.</p><p>ID externe : {{externalId}}</p>',
+          content: '<h1>Votre service est actif !</h1><p>Bonne nouvelle ! Votre service <strong>{{productName}}</strong> a été provisionné avec succès et est maintenant prêt à l\'emploi.</p><p>Vous pouvez gérer votre service directement depuis votre espace client.</p><p style="text-align: center;"><a href="{{dashboardUrl}}" class="button">Accéder à mon service</a></p>',
           type: 'TRANSACTIONAL'
         },
         {
           name: 'NEW_INVOICE',
           subject: 'Nouvelle facture #{{invoiceId}}',
-          content: '<h1>Nouvelle facture</h1><p>Une nouvelle facture de {{amount}}€ a été générée. Date limite : {{dueDate}}</p>',
+          content: '<h1>Nouvelle facture disponible</h1><p>Une nouvelle facture d\'un montant de <strong>{{amount}}€</strong> vient d\'être générée pour votre compte.</p><p>Échéance : {{dueDate}}</p><p style="text-align: center;"><a href="{{invoiceUrl}}" class="button">Consulter la facture</a></p>',
           type: 'TRANSACTIONAL'
         },
         {
           name: 'INVOICE_PAID',
-          subject: 'Facture #{{invoiceId}} payée',
-          content: '<h1>Merci !</h1><p>Votre paiement de {{amount}}€ pour la facture #{{invoiceId}} a bien été reçu.</p>',
+          subject: 'Paiement reçu - Facture #{{invoiceId}}',
+          content: '<h1>Merci pour votre paiement !</h1><p>Nous vous confirmons la réception de votre paiement de <strong>{{amount}}€</strong> pour la facture #{{invoiceId}}.</p><p>Votre facture acquittée est disponible en pièce jointe de cet email.</p>',
           type: 'TRANSACTIONAL'
         },
         {
           name: 'INVOICE_REMINDER',
-          subject: 'Rappel : Facture #{{invoiceId}} impayée',
-          content: '<h1>Rappel</h1><p>Votre facture #{{invoiceId}} est toujours en attente de paiement ({{amount}}€).</p>',
+          subject: 'Rappel : Facture #{{invoiceId}} en attente',
+          content: '<h1>Rappel de paiement</h1><p>Sauf erreur de notre part, votre facture #{{invoiceId}} d\'un montant de <strong>{{amount}}€</strong> est toujours en attente de règlement.</p><p>Nous vous invitons à régulariser votre situation au plus vite pour éviter toute interruption de service.</p><p style="text-align: center;"><a href="{{invoiceUrl}}" class="button">Régler ma facture</a></p>',
           type: 'TRANSACTIONAL'
         },
         {
@@ -134,14 +134,20 @@ router.post('/templates/sync', authMiddleware, adminMiddleware, async (req, res)
         },
         {
           name: 'TICKET_CREATED',
-          subject: 'Ticket reçu : {{subject}}',
-          content: '<h1>Ticket ouvert</h1><p>Nous avons bien reçu votre ticket #{{ticketId}} : {{subject}}</p>',
+          subject: 'Ticket ouvert - #{{ticketId}}',
+          content: '<h1>Confirmation d\'ouverture de ticket</h1><p>Nous avons bien reçu votre demande concernant : <strong>{{subject}}</strong>.</p><p>Un membre de notre équipe technique va l\'étudier et vous répondra dans les plus brefs délais. Votre numéro de ticket est le <strong>#{{ticketId}}</strong>.</p><p style="text-align: center;"><a href="{{ticketUrl}}" class="button">Voir mon ticket</a></p>',
           type: 'TRANSACTIONAL'
         },
         {
           name: 'TICKET_REPLY',
-          subject: 'Réponse à votre ticket : {{subject}}',
-          content: '<h1>Nouvelle réponse</h1><p>Un agent a répondu à votre ticket #{{ticketId}}.</p><hr><p>{{message}}</p>',
+          subject: 'Nouvelle réponse - Ticket #{{ticketId}}',
+          content: '<h1>Nouvelle réponse de notre support</h1><p>Un agent a apporté une réponse à votre ticket #{{ticketId}} ({{subject}}).</p><div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0050d7;">{{message}}</div><p style="text-align: center;"><a href="{{ticketUrl}}" class="button">Répondre au ticket</a></p>',
+          type: 'TRANSACTIONAL'
+        },
+        {
+          name: 'CREDIT_REFILL_CONFIRMATION',
+          subject: 'Confirmation de rechargement - {{amount}}€',
+          content: '<h1>Rechargement réussi !</h1><p>Bonjour {{name}},</p><p>Nous vous confirmons que votre compte a été crédité de <strong>{{amount}}€</strong>.</p><p>Votre nouveau solde est de <strong>{{balance}}€</strong>.</p><p>Merci de votre confiance.</p><p style="text-align: center;"><a href="{{dashboardUrl}}" class="button">Voir mon compte</a></p>',
           type: 'TRANSACTIONAL'
         }
     ];
@@ -149,7 +155,10 @@ router.post('/templates/sync', authMiddleware, adminMiddleware, async (req, res)
     for (const t of defaultTemplates) {
         await prisma.emailTemplate.upsert({
             where: { name: t.name },
-            update: {},
+            update: {
+                subject: t.subject,
+                content: t.content
+            },
             create: t
         });
     }

@@ -31,6 +31,9 @@ export const createOrder = async (req: any, res: Response) => {
 
     // Send New Invoice Email
     if (invoice.user?.email) {
+        const { generateInvoicePDF } = await import('../../utils/pdfGenerator.js');
+        const pdfBuffer = await generateInvoicePDF(invoice);
+
         sendEmail({
           to: invoice.user.email,
           subject: `Nouvelle facture #${invoice.id} - Infralyonix`,
