@@ -30,11 +30,11 @@ export const register = async (req: Request, res: Response) => {
     // Trigger Welcome & Verification Email
     sendEmail({
       to: user.email,
-      subject: 'Bienvenue chez Infralyonix - Vérifiez votre email',
+      subject: 'Bienvenue chez Infralyonix - Vérifiez votre compte',
       templateName: 'WELCOME_VERIFICATION',
       context: {
         name: user.name,
-        verificationUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
+        verificationUrl: `${req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
       }
     });
 

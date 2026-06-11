@@ -33,6 +33,10 @@ export const payInvoice = async (req: any, res: Response) => {
       prisma.order.update({ where: { id: invoice.orderId! }, data: { status: 'PAID' } })
     ]);
 
+    // Generate PDF Invoice
+    const { generateInvoicePDF } = await import('../../utils/pdfGenerator.js');
+    const pdfBuffer = await generateInvoicePDF(invoice);
+
     // Send Invoice Paid Email
     sendEmail({
       to: invoice.user.email,
@@ -42,7 +46,12 @@ export const payInvoice = async (req: any, res: Response) => {
         name: invoice.user.name,
         invoiceId: invoice.id,
         amount: invoice.amount
-      }
+      },
+      attachments: [{
+        filename: `facture-${invoice.id}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }]
     });
 
     await createLog({ type: 'SERVICE', level: 'INFO', message: `Invoice paid: #INV-${invoice.id}`, userId, details: { amount: invoice.amount } });
@@ -134,7 +143,8 @@ export const payInvoice = async (req: any, res: Response) => {
                 name: invoice.user.name,
                 productName: product.name,
                 serviceId: createdService.id,
-                externalId: externalId
+                externalId: externalId,
+                dashboardUrl: `${req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000'}/services/${createdService.id}`
               }
             });
 

@@ -34,6 +34,9 @@ async function checkUnpaidInvoices() {
 
         for (const invoice of pendingInvoices) {
             try {
+                const { generateInvoicePDF } = await import('../utils/pdfGenerator.js');
+                const pdfBuffer = await generateInvoicePDF(invoice);
+
                 sendEmail({
                     to: invoice.user.email,
                     subject: `Rappel : Votre facture #${invoice.id} est en attente de paiement`,

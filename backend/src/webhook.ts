@@ -44,6 +44,18 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
             data: { balance: { increment: credits } }
         });
 
+        // Generate a pseudo-invoice object for the PDF generator
+        const pseudoInvoice = {
+            id: `REFILL-${Date.now()}`,
+            createdAt: new Date(),
+            amount: credits,
+            status: 'PAID',
+            user: user
+        };
+
+        const { generateInvoicePDF } = await import('./utils/pdfGenerator.js');
+        const pdfBuffer = await generateInvoicePDF(pseudoInvoice);
+
         const { sendEmail } = await import('./services/email.service.js');
         sendEmail({
             to: user.email,
@@ -52,8 +64,14 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
             context: {
                 name: user.name,
                 amount: credits,
-                balance: user.balance
-            }
+                balance: user.balance,
+                dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/billing`
+            },
+            attachments: [{
+                filename: `facture-rechargement-${credits}eur.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }]
         });
 
         const { createLog } = await import('./utils/logger.js');

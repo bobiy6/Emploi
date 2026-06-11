@@ -30,6 +30,11 @@ export interface EmailOptions {
     context: any;
     isMarketing?: boolean;
     delay?: number;
+    attachments?: {
+        filename: string;
+        content: any;
+        contentType?: string;
+    }[];
 }
 
 export const sendEmail = async (options: EmailOptions) => {
@@ -80,23 +85,61 @@ export const getTransporter = async () => {
     });
 };
 
+const baseLayout = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f7f9; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .header { background-color: #001747; padding: 30px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px; }
+        .content { padding: 40px; }
+        .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+        .button { display: inline-block; padding: 12px 30px; background-color: #0050d7; color: #ffffff !important; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+        .footer a { color: #0050d7; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>INFRALYONIX</h1>
+        </div>
+        <div class="content">
+            {{{content}}}
+        </div>
+        <div class="footer">
+            <p>&copy; {{year}} Infralyonix. Tous droits réservés.</p>
+            <p>Infrastructure & Cloud Services Haute Performance</p>
+            <p><a href="{{unsubscribeUrl}}">Se désabonner</a></p>
+        </div>
+    </div>
+</body>
+</html>
+`;
+
 export const renderTemplate = async (templateName: string, context: any) => {
     const template = await prisma.emailTemplate.findUnique({
         where: { name: templateName }
     });
 
     if (!template) {
-        // Fallback for critical missing templates
         console.error(`[CRITICAL] Email template ${templateName} not found in database.`);
         return {
-            subject: `Information Infralyonix - ${templateName}`,
-            html: `<h1>Infralyonix</h1><p>Détails : ${JSON.stringify(context)}</p>`
+            subject: `Info - ${templateName}`,
+            html: `<h1>Infralyonix</h1><p>${JSON.stringify(context)}</p>`
         };
     }
 
-    const compiledTemplate = handlebars.compile(template.content);
+    const currentYear = new Date().getFullYear();
+    const extendedContext = { ...context, year: currentYear };
+
+    const bodyCompiled = handlebars.compile(template.content)(extendedContext);
+    const fullHtml = handlebars.compile(baseLayout)({ ...extendedContext, content: bodyCompiled });
+
     return {
-        subject: handlebars.compile(template.subject)(context),
-        html: compiledTemplate(context),
+        subject: handlebars.compile(template.subject)(extendedContext),
+        html: fullHtml,
     };
 };

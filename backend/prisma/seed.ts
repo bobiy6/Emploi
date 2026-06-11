@@ -82,14 +82,20 @@ async function main() {
       },
       {
         name: 'TICKET_CREATED',
-        subject: 'Ticket reçu : {{subject}}',
-        content: '<h1>Ticket ouvert</h1><p>Nous avons bien reçu votre ticket #{{ticketId}} : {{subject}}</p>',
+        subject: 'Ticket ouvert - #{{ticketId}}',
+        content: '<h1>Confirmation d\'ouverture de ticket</h1><p>Nous avons bien reçu votre demande concernant : <strong>{{subject}}</strong>.</p><p>Un membre de notre équipe technique va l\'étudier et vous répondra dans les plus brefs délais. Votre numéro de ticket est le <strong>#{{ticketId}}</strong>.</p><p style="text-align: center;"><a href="{{ticketUrl}}" class="button">Voir mon ticket</a></p>',
         type: 'TRANSACTIONAL'
       },
       {
         name: 'TICKET_REPLY',
-        subject: 'Réponse à votre ticket : {{subject}}',
-        content: '<h1>Nouvelle réponse</h1><p>Un agent a répondu à votre ticket #{{ticketId}}.</p><hr><p>{{message}}</p>',
+        subject: 'Nouvelle réponse - Ticket #{{ticketId}}',
+        content: '<h1>Nouvelle réponse de notre support</h1><p>Un agent a apporte une réponse à votre ticket #{{ticketId}} ({{subject}}).</p><div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0050d7;">{{message}}</div><p style="text-align: center;"><a href="{{ticketUrl}}" class="button">Répondre au ticket</a></p>',
+        type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'CREDIT_REFILL_CONFIRMATION',
+        subject: 'Confirmation de rechargement - {{amount}}€',
+        content: '<h1>Rechargement réussi !</h1><p>Bonjour {{name}},</p><p>Nous vous confirmons que votre compte a été crédité de <strong>{{amount}}€</strong>.</p><p>Votre nouveau solde est de <strong>{{balance}}€</strong>.</p><p>Merci de votre confiance.</p><p style="text-align: center;"><a href="{{dashboardUrl}}" class="button">Voir mon compte</a></p>',
         type: 'TRANSACTIONAL'
       }
     ],
