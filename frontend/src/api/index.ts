@@ -4,8 +4,12 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api'),
 });
 
-// Robust URL handling to prevent double slashes
+// Robust URL handling to ensure correct path joining
 api.interceptors.request.use((config) => {
+  // Ensure baseURL ends with / and url doesn't start with /
+  if (config.baseURL && !config.baseURL.endsWith('/')) {
+    config.baseURL += '/';
+  }
   if (config.url?.startsWith('/')) {
     config.url = config.url.substring(1);
   }
