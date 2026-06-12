@@ -3,7 +3,8 @@ import { Redis } from 'ioredis';
 import { getTransporter, renderTemplate, EmailOptions } from './email.service.js';
 import prisma from '../config/prisma.js';
 import { createLog } from '../utils/logger.js';
-const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+const redisConnection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
+    family: 4,
     maxRetriesPerRequest: null,
 });
 

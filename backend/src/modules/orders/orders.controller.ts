@@ -31,8 +31,18 @@ export const createOrder = async (req: any, res: Response) => {
 
     // Send New Invoice Email
     if (invoice.user?.email) {
-        const { generateInvoicePDF } = await import('../../utils/pdfGenerator.js');
-        const pdfBuffer = await generateInvoicePDF(invoice);
+        let attachments = undefined;
+        try {
+            const { generateInvoicePDF } = await import('../../utils/pdfGenerator.js');
+            const pdfBuffer = await generateInvoicePDF(invoice);
+            attachments = [{
+                filename: `facture-${invoice.id}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }];
+        } catch (pdfErr) {
+            console.error('[PDF GENERATION ERROR]:', pdfErr);
+        }
 
         sendEmail({
           to: invoice.user.email,
@@ -42,8 +52,10 @@ export const createOrder = async (req: any, res: Response) => {
             name: invoice.user.name,
             invoiceId: invoice.id,
             amount: invoice.amount,
-            dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString() // 3 days
-          }
+            dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString(), // 3 days
+            invoiceUrl: `${req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000'}/billing`
+          },
+          attachments
         });
     }
 

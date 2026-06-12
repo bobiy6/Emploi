@@ -34,8 +34,18 @@ export const payInvoice = async (req: any, res: Response) => {
     ]);
 
     // Generate PDF Invoice
-    const { generateInvoicePDF } = await import('../../utils/pdfGenerator.js');
-    const pdfBuffer = await generateInvoicePDF(invoice);
+    let attachments = undefined;
+    try {
+        const { generateInvoicePDF } = await import('../../utils/pdfGenerator.js');
+        const pdfBuffer = await generateInvoicePDF(invoice);
+        attachments = [{
+            filename: `facture-${invoice.id}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        }];
+    } catch (pdfErr) {
+        console.error('[PDF GENERATION ERROR]:', pdfErr);
+    }
 
     // Send Invoice Paid Email
     sendEmail({
@@ -47,11 +57,7 @@ export const payInvoice = async (req: any, res: Response) => {
         invoiceId: invoice.id,
         amount: invoice.amount
       },
-      attachments: [{
-        filename: `facture-${invoice.id}.pdf`,
-        content: pdfBuffer,
-        contentType: 'application/pdf'
-      }]
+      attachments
     });
 
     await createLog({ type: 'SERVICE', level: 'INFO', message: `Invoice paid: #INV-${invoice.id}`, userId, details: { amount: invoice.amount } });
