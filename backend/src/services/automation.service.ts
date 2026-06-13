@@ -34,8 +34,18 @@ async function checkUnpaidInvoices() {
 
         for (const invoice of pendingInvoices) {
             try {
-                const { generateInvoicePDF } = await import('../utils/pdfGenerator.js');
-                const pdfBuffer = await generateInvoicePDF(invoice);
+                let attachments = undefined;
+                try {
+                    const { generateInvoicePDF } = await import('../utils/pdfGenerator.js');
+                    const pdfBuffer = await generateInvoicePDF(invoice);
+                    attachments = [{
+                        filename: `facture-${invoice.id}.pdf`,
+                        content: pdfBuffer,
+                        contentType: 'application/pdf'
+                    }];
+                } catch (pdfErr) {
+                    console.error('[PDF GENERATION ERROR]:', pdfErr);
+                }
 
                 sendEmail({
                     to: invoice.user.email,
@@ -44,8 +54,10 @@ async function checkUnpaidInvoices() {
                     context: {
                         name: invoice.user.name,
                         invoiceId: invoice.id,
-                        amount: invoice.amount
-                    }
+                        amount: invoice.amount,
+                        invoiceUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/billing`
+                    },
+                    attachments
                 });
             } catch (error) {
                 console.error(`Failed to send reminder for invoice ${invoice.id}:`, error);

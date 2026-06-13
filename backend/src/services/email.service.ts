@@ -3,7 +3,8 @@ import handlebars from 'handlebars';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import prisma from '../config/prisma.js';
-const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+const redisConnection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', {
+    family: 4, // Force IPv4 to avoid ::1 connection refused
     maxRetriesPerRequest: null,
     connectTimeout: 5000,
     reconnectOnError: (err) => {
@@ -39,16 +40,21 @@ export interface EmailOptions {
 
 export const sendEmail = async (options: EmailOptions) => {
     try {
-        const job = await emailQueue.add('send-email', options, {
-            attempts: 5, // Increased attempts for reliability
-            delay: options.delay || 0,
-            removeOnComplete: true, // Keep DB clean
-            removeOnFail: false, // Keep failed for manual retry/analysis
-            backoff: {
-                type: 'exponential',
-                delay: 5000, // Longer initial delay for rate limits
-            },
-        });
+        // Race the queue add against a timeout to prevent hanging the event loop if Redis is down
+        const job = await Promise.race([
+            emailQueue.add('send-email', options, {
+                attempts: 5,
+                delay: options.delay || 0,
+                removeOnComplete: true,
+                removeOnFail: false,
+                backoff: {
+                    type: 'exponential',
+                    delay: 5000,
+                },
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Redis timeout')), 2000))
+        ]) as any;
+
         console.log(`[EMAIL] Enqueued job ${job.id} for ${options.to} [${options.templateName}]`);
     } catch (error) {
         console.error('[EMAIL QUEUE ERROR]:', error);
@@ -62,6 +68,7 @@ export const sendEmail = async (options: EmailOptions) => {
         });
     }
 };
+
 
 export const getTransporter = async () => {
     const smtpSetting = await prisma.systemSetting.findUnique({

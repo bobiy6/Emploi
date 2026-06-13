@@ -24,7 +24,7 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
 
     if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
         const session = event.data.object;
-        const metadata = session.metadata;
+        const metadata = session.metadata || (session as any).payment_intent_data?.metadata;
 
         if (!metadata?.userId || !metadata?.credits) {
             console.warn('[STRIPE] Missing metadata for successful payment');
@@ -45,16 +45,26 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
         });
 
         // Generate a pseudo-invoice object for the PDF generator
-        const pseudoInvoice = {
-            id: `REFILL-${Date.now()}`,
-            createdAt: new Date(),
-            amount: credits,
-            status: 'PAID',
-            user: user
-        };
+        let attachments = undefined;
+        try {
+            const pseudoInvoice = {
+                id: `REFILL-${Date.now()}`,
+                createdAt: new Date(),
+                amount: credits,
+                status: 'PAID',
+                user: user
+            };
 
-        const { generateInvoicePDF } = await import('./utils/pdfGenerator.js');
-        const pdfBuffer = await generateInvoicePDF(pseudoInvoice);
+            const { generateInvoicePDF } = await import('./utils/pdfGenerator.js');
+            const pdfBuffer = await generateInvoicePDF(pseudoInvoice);
+            attachments = [{
+                filename: `facture-rechargement-${credits}eur.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            }];
+        } catch (pdfErr) {
+            console.error('[PDF GENERATION ERROR]:', pdfErr);
+        }
 
         const { sendEmail } = await import('./services/email.service.js');
         sendEmail({
@@ -67,11 +77,7 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
                 balance: user.balance,
                 dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/billing`
             },
-            attachments: [{
-                filename: `facture-rechargement-${credits}eur.pdf`,
-                content: pdfBuffer,
-                contentType: 'application/pdf'
-            }]
+            attachments
         });
 
         const { createLog } = await import('./utils/logger.js');

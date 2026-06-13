@@ -4,6 +4,9 @@ import 'jspdf-autotable';
 export const generateInvoicePDF = async (invoice: any) => {
     const doc = new jsPDF() as any;
 
+    // In Node.js environment with ESM, autoTable might need careful access
+    const autoTable = (doc as any).autoTable;
+
     // Header
     doc.setFontSize(24);
     doc.setTextColor(0, 23, 71); // OVH Dark Blue
@@ -52,7 +55,7 @@ export const generateInvoicePDF = async (invoice: any) => {
         ]
     ];
 
-    doc.autoTable({
+    (doc as any).autoTable({
         startY: 100,
         head: [['Désignation', 'Qté', 'Prix Unitaire (HT)', 'Total (TTC)']],
         body: tableData,
