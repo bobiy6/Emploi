@@ -4,9 +4,6 @@ import 'jspdf-autotable';
 export const generateInvoicePDF = async (invoice: any) => {
     const doc = new jsPDF() as any;
 
-    // In Node.js environment with ESM, autoTable might need careful access
-    const autoTable = (doc as any).autoTable;
-
     // Header
     doc.setFontSize(24);
     doc.setTextColor(0, 23, 71); // OVH Dark Blue
@@ -55,6 +52,29 @@ export const generateInvoicePDF = async (invoice: any) => {
         ]
     ];
 
+    if (typeof (doc as any).autoTable !== 'function') {
+        const { default: autoTable } = await import('jspdf-autotable');
+        (autoTable as any)(doc, {
+            startY: 100,
+            head: [['Désignation', 'Qté', 'Prix Unitaire (HT)', 'Total (TTC)']],
+            body: [
+                [
+                    invoice.order?.product?.name || 'Rechargement de Crédits (Balance Top-up)',
+                    '1',
+                    `${invoice.amount.toFixed(2)}€`,
+                    `${invoice.amount.toFixed(2)}€`
+                ]
+            ],
+            headStyles: { fillColor: [0, 80, 215], fontSize: 9, fontStyle: 'bold' },
+            styles: { fontSize: 9, cellPadding: 5 },
+            columnStyles: {
+                0: { cellWidth: 100 },
+                1: { halign: 'center' },
+                2: { halign: 'right' },
+                3: { halign: 'right' }
+            }
+        });
+    } else {
     (doc as any).autoTable({
         startY: 100,
         head: [['Désignation', 'Qté', 'Prix Unitaire (HT)', 'Total (TTC)']],
@@ -68,6 +88,7 @@ export const generateInvoicePDF = async (invoice: any) => {
             3: { halign: 'right' }
         }
     });
+    }
 
     // Summary
     const finalY = (doc as any).lastAutoTable.finalY || 110;

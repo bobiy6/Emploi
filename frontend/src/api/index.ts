@@ -10,9 +10,15 @@ api.interceptors.request.use((config) => {
   if (config.baseURL && !config.baseURL.endsWith('/')) {
     config.baseURL += '/';
   }
-  if (config.url?.startsWith('/')) {
-    config.url = config.url.substring(1);
+
+  // Handle URL carefully. If it's absolute, don't modify it.
+  if (config.url && !config.url.startsWith('http')) {
+    // If the URL starts with / we strip it because baseURL already ends with /
+    if (config.url.startsWith('/')) {
+      config.url = config.url.substring(1);
+    }
   }
+
   return config;
 });
 

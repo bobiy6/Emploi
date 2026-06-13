@@ -61,6 +61,12 @@ router.post('/create-checkout-session', authMiddleware, async (req: any, res: an
             metadata: {
                 userId: req.userId.toString(),
                 credits: requestedCredits.toString()
+            },
+            payment_intent_data: {
+                metadata: {
+                    userId: req.userId.toString(),
+                    credits: requestedCredits.toString()
+                }
             }
         });
 
