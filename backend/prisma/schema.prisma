@@ -55,6 +55,10 @@ model User {
   emailVerificationToken String?
   passwordResetToken     String?
   passwordResetExpires   DateTime?
+  twoFactorEnabled       Boolean  @default(false)
+  twoFactorCode          String?
+  twoFactorExpires       DateTime?
+  lastIps                Json?    // Array of seen IPs
   unsubscribed  Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

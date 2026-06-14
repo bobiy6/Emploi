@@ -155,6 +155,24 @@ router.post('/templates/sync', authMiddleware, adminMiddleware, async (req, res)
           subject: 'Réinitialisation de votre mot de passe',
           content: '<h1>Réinitialisation de mot de passe</h1><p>Bonjour {{name}},</p><p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte Infralyonix.</p><p>Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :</p><p style="text-align: center;"><a href="{{resetUrl}}" class="button">Réinitialiser mon mot de passe</a></p><p>Si vous n\'êtes pas à l\'origine de cette demande, vous pouvez ignorer cet email.</p>',
           type: 'TRANSACTIONAL'
+        },
+        {
+          name: 'PASSWORD_CHANGED',
+          subject: 'Votre mot de passe a été modifié',
+          content: '<h1>Sécurité de votre compte</h1><p>Bonjour {{name}},</p><p>Nous vous informons que le mot de passe de votre compte Infralyonix a été modifié avec succès.</p><p><strong>Détails de l\'action :</strong></p><ul><li>Date : {{date}}</li><li>Adresse IP : {{ip}}</li></ul><p>Si vous n\'êtes pas à l\'origine de cette modification, nous vous recommandons de réinitialiser votre mot de passe immédiatement et de contacter notre support.</p>',
+          type: 'TRANSACTIONAL'
+        },
+        {
+          name: 'NEW_DEVICE_LOGIN',
+          subject: 'Nouvelle connexion détectée',
+          content: '<h1>Alerte de sécurité</h1><p>Bonjour {{name}},</p><p>Une nouvelle connexion à votre compte Infralyonix a été détectée depuis une adresse IP inhabituelle.</p><p><strong>Détails de la connexion :</strong></p><ul><li>Date : {{date}}</li><li>Adresse IP : {{ip}}</li></ul><p>S\'il s\'agit de vous, vous pouvez ignorer cet email. Si ce n\'est pas le cas, sécurisez votre compte en changeant votre mot de passe sans tarder.</p>',
+          type: 'TRANSACTIONAL'
+        },
+        {
+          name: '2FA_CODE',
+          subject: 'Votre code de vérification',
+          content: '<h1>Vérification de sécurité</h1><p>Bonjour {{name}},</p><p>Pour finaliser votre connexion, veuillez utiliser le code de vérification suivant :</p><div style="background: #f1f5f9; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0;"><span style="font-size: 32px; font-weight: 900; letter-spacing: 5px; color: #001747;">{{code}}</span></div><p>Ce code est valable pendant 10 minutes. Ne le partagez jamais.</p>',
+          type: 'TRANSACTIONAL'
         }
     ];
 
