@@ -90,6 +90,56 @@ export const login = async (req: Request, res: Response) => {
       userId: user.id
     });
 
+    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+
+    // IP Security Alert Logic
+    let currentIps = (user.lastIps as string[]) || [];
+    if (!currentIps.includes(userIp)) {
+      currentIps.push(userIp);
+      if (currentIps.length > 5) currentIps.shift(); // Keep last 5
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastIps: currentIps }
+      });
+
+      // Notify of login from new IP (Skip first IP ever to avoid spam at registration/first login)
+      if (currentIps.length > 1) {
+        sendEmail({
+          to: user.email,
+          subject: 'Nouvelle connexion détectée - Infralyonix',
+          templateName: 'NEW_DEVICE_LOGIN',
+          context: {
+            name: user.name,
+            ip: userIp,
+            date: new Date().toLocaleString('fr-FR')
+          }
+        });
+      }
+    }
+
+    if (user.twoFactorEnabled) {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expires = new Date(Date.now() + 600000); // 10 min
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { twoFactorCode: code, twoFactorExpires: expires }
+      });
+
+      sendEmail({
+        to: user.email,
+        subject: 'Votre code de vérification - Infralyonix',
+        templateName: '2FA_CODE',
+        context: {
+          name: user.name,
+          code
+        }
+      });
+
+      return res.json({ require2FA: true, userId: user.id });
+    }
+
     const token = generateToken(user.id, user.role);
     res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
   } catch (error: any) {
@@ -110,6 +160,7 @@ export const getProfile = async (req: any, res: Response) => {
       select: {
         id: true, email: true, name: true, role: true, balance: true,
         isCompany: true, companyName: true, vatNumber: true, address: true,
+        twoFactorEnabled: true,
         createdAt: true
       },
     });
@@ -121,20 +172,37 @@ export const getProfile = async (req: any, res: Response) => {
 };
 
 export const updateProfile = async (req: any, res: Response) => {
-  const { name, isCompany, companyName, vatNumber, address, password } = req.body;
+  const { name, isCompany, companyName, vatNumber, address, password, twoFactorEnabled } = req.body;
   const email = req.body.email?.toLowerCase().trim();
-  const updateData: any = { name, email, isCompany, companyName, vatNumber, address };
+  const updateData: any = { name, email, isCompany, companyName, vatNumber, address, twoFactorEnabled };
 
   try {
+    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+    let passwordChanged = false;
+
     if (password) {
       const bcrypt = (await import('bcryptjs')).default;
       updateData.password = await bcrypt.hash(password, 10);
+      passwordChanged = true;
     }
 
     const user = await prisma.user.update({
       where: { id: req.userId },
       data: updateData,
     });
+
+    if (passwordChanged) {
+      sendEmail({
+        to: user.email,
+        subject: 'Votre mot de passe a été modifié - Infralyonix',
+        templateName: 'PASSWORD_CHANGED',
+        context: {
+          name: user.name,
+          ip: userIp,
+          date: new Date().toLocaleString('fr-FR')
+        }
+      });
+    }
 
     res.json({ message: 'Profile updated', user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {
@@ -205,6 +273,29 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
+export const verify2FA = async (req: Request, res: Response) => {
+  const { userId, code } = req.body;
+  try {
+    const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.twoFactorCode !== code || (user.twoFactorExpires && user.twoFactorExpires < new Date())) {
+      return res.status(400).json({ message: 'Code invalide ou expiré.' });
+    }
+
+    // Clear code
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { twoFactorCode: null, twoFactorExpires: null }
+    });
+
+    const token = generateToken(user.id, user.role);
+    res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Verification failed', error: error.message });
+  }
+};
+
 export const resetPassword = async (req: Request, res: Response) => {
   const { token, password } = req.body;
   try {
@@ -220,6 +311,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
 
     await prisma.user.update({
       where: { id: user.id },
@@ -227,6 +319,17 @@ export const resetPassword = async (req: Request, res: Response) => {
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null
+      }
+    });
+
+    sendEmail({
+      to: user.email,
+      subject: 'Confirmation du changement de mot de passe - Infralyonix',
+      templateName: 'PASSWORD_CHANGED',
+      context: {
+        name: user.name,
+        ip: userIp,
+        date: new Date().toLocaleString('fr-FR')
       }
     });
 

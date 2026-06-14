@@ -14,7 +14,8 @@ const Settings = () => {
     isCompany: false,
     companyName: '',
     vatNumber: '',
-    address: ''
+    address: '',
+    twoFactorEnabled: false
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -34,7 +35,8 @@ const Settings = () => {
         isCompany: res.data.isCompany || false,
         companyName: res.data.companyName || '',
         vatNumber: res.data.vatNumber || '',
-        address: res.data.address || ''
+        address: res.data.address || '',
+        twoFactorEnabled: res.data.twoFactorEnabled || false
       });
     } catch (err) {
       console.error(err);
@@ -75,6 +77,20 @@ const Settings = () => {
               <Input label="Full Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
               <Input label="Email Address" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
               <Input label="New Password (optional)" type="password" placeholder="Leave blank to keep current" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
+
+              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100 mt-4">
+                 <input
+                    type="checkbox"
+                    id="twoFactorEnabled"
+                    className="w-5 h-5 accent-blue-600 cursor-pointer"
+                    checked={form.twoFactorEnabled}
+                    onChange={e => setForm({...form, twoFactorEnabled: e.target.checked})}
+                 />
+                 <div className="flex flex-col">
+                    <label htmlFor="twoFactorEnabled" className="text-sm font-bold text-[#001747] cursor-pointer">Authentification à deux facteurs (2FA)</label>
+                    <span className="text-xs text-blue-600 font-medium">Recommandé pour sécuriser votre compte via email.</span>
+                 </div>
+              </div>
            </Card>
 
            <Card className="space-y-6">
