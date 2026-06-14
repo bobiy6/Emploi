@@ -90,33 +90,32 @@ export const login = async (req: Request, res: Response) => {
       userId: user.id
     });
 
-    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+    const userIp = (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().replace('::ffff:', '');
+    const userAgent = req.headers['user-agent'] || 'Inconnu';
 
-    // IP Security Alert Logic
+    // IP Security Alert Logic - Always notify
     let currentIps = (user.lastIps as string[]) || [];
     if (!currentIps.includes(userIp)) {
       currentIps.push(userIp);
-      if (currentIps.length > 5) currentIps.shift(); // Keep last 5
+      if (currentIps.length > 10) currentIps.shift(); // Keep last 10
 
       await prisma.user.update({
         where: { id: user.id },
         data: { lastIps: currentIps }
       });
-
-      // Notify of login from new IP (Skip first IP ever to avoid spam at registration/first login)
-      if (currentIps.length > 1) {
-        sendEmail({
-          to: user.email,
-          subject: 'Nouvelle connexion détectée - Infralyonix',
-          templateName: 'NEW_DEVICE_LOGIN',
-          context: {
-            name: user.name,
-            ip: userIp,
-            date: new Date().toLocaleString('fr-FR')
-          }
-        });
-      }
     }
+
+    sendEmail({
+      to: user.email,
+      subject: 'Alerte de sécurité : Nouvelle connexion à votre compte Infralyonix',
+      templateName: 'NEW_DEVICE_LOGIN',
+      context: {
+        name: user.name,
+        ip: userIp,
+        userAgent,
+        date: new Date().toLocaleString('fr-FR')
+      }
+    });
 
     if (user.twoFactorEnabled) {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -161,6 +160,7 @@ export const getProfile = async (req: any, res: Response) => {
         id: true, email: true, name: true, role: true, balance: true,
         isCompany: true, companyName: true, vatNumber: true, address: true,
         twoFactorEnabled: true,
+        emailVerified: true,
         createdAt: true
       },
     });
@@ -177,7 +177,7 @@ export const updateProfile = async (req: any, res: Response) => {
   const updateData: any = { name, email, isCompany, companyName, vatNumber, address, twoFactorEnabled };
 
   try {
-    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+    const userIp = (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().replace('::ffff:', '');
     let passwordChanged = false;
 
     if (password) {
@@ -207,6 +207,34 @@ export const updateProfile = async (req: any, res: Response) => {
     res.json({ message: 'Profile updated', user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {
     res.status(500).json({ message: 'Update failed', error });
+  }
+};
+
+export const resendVerificationEmail = async (req: any, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.emailVerified) return res.status(400).json({ message: 'Email already verified' });
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerificationToken: verificationToken }
+    });
+
+    sendEmail({
+      to: user.email,
+      subject: 'Vérifiez votre compte Infralyonix',
+      templateName: 'WELCOME_VERIFICATION',
+      context: {
+        name: user.name,
+        verificationUrl: `${req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
+      }
+    });
+
+    res.json({ message: 'Email de vérification envoyé avec succès.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error resending verification', error });
   }
 };
 
@@ -311,7 +339,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+    const userIp = (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().replace('::ffff:', '');
 
     await prisma.user.update({
       where: { id: user.id },
