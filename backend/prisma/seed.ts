@@ -112,8 +112,8 @@ async function main() {
       },
       {
         name: 'NEW_DEVICE_LOGIN',
-        subject: 'Nouvelle connexion détectée',
-        content: '<h1>Alerte de sécurité</h1><p>Bonjour {{name}},</p><p>Une nouvelle connexion à votre compte Infralyonix a été détectée.</p><p><strong>Détails de la connexion :</strong></p><ul><li>Date : {{date}}</li><li>Adresse IP : {{ip}}</li></ul><p>Si vous n\'êtes pas à l\'origine de cette connexion, nous vous recommandons de changer votre mot de passe immédiatement pour sécuriser votre compte.</p>',
+        subject: 'Alerte de sécurité : Nouvelle connexion détectée',
+        content: '<h1>Alerte de sécurité</h1><p>Bonjour {{name}},</p><p>Une connexion à votre compte vient d\'être détectée.</p><p><strong>Détails de la connexion :</strong></p><ul><li>Date et heure : {{date}}</li><li>Adresse IP : {{ip}}</li><li>Appareil : {{userAgent}}</li></ul><p>Si vous n\'êtes pas à l\'origine de cette connexion, veuillez modifier immédiatement votre mot de passe et vérifier les paramètres de sécurité de votre compte.</p>',
         type: 'TRANSACTIONAL'
       },
       {

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Server, CreditCard, LifeBuoy, ShoppingCart, LogOut, Settings, User, LogIn, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Server, CreditCard, LifeBuoy, ShoppingCart, LogOut, Settings, User, LogIn, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../hooks/useAuth';
+import api from '../api';
 
 const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
   <Link
@@ -32,6 +33,21 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [resending, setResending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleResendEmail = async () => {
+    setResending(true);
+    try {
+      await api.post('/auth/resend-verification');
+      setSent(true);
+      setTimeout(() => setSent(false), 5000);
+    } catch (err) {
+      alert('Erreur lors de l\'envoi.');
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -56,7 +72,7 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen bg-[#f5f7fa]">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#001747] flex flex-col fixed h-full z-30 shadow-2xl">
+      <aside className="hidden lg:flex w-64 bg-[#001747] flex-col fixed h-full z-30 shadow-2xl">
         <div className="p-6 mb-2">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#0050d7] rounded flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -100,19 +116,29 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64">
+      <main className="flex-1 lg:ml-64 flex flex-col">
         {!user?.emailVerified && (
-           <div className="bg-amber-500 text-white px-8 py-3 text-sm font-bold flex items-center justify-between shadow-xl sticky top-0 z-40">
+           <div className="bg-amber-500 text-white px-4 md:px-8 py-3 text-sm font-bold flex flex-col md:flex-row items-center justify-between gap-3 shadow-xl sticky top-0 z-40">
               <div className="flex items-center gap-3">
-                 <AlertCircle className="w-5 h-5" />
-                 <span>Veuillez vérifier votre adresse e-mail pour sécuriser pleinement votre compte.</span>
+                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                 <span className="text-center md:text-left">Pour renforcer la sécurité de votre compte, veuillez vérifier votre adresse email. Certaines fonctionnalités peuvent être limitées tant que votre compte n'est pas vérifié.</span>
               </div>
-              <Link
-                to="/settings"
-                className="bg-white/20 hover:bg-white/30 px-4 py-1.5 rounded-lg text-xs transition-all uppercase tracking-widest font-black"
-              >
-                Vérifier maintenant
-              </Link>
+              <div className="flex items-center gap-2">
+                <button
+                    onClick={handleResendEmail}
+                    disabled={resending || sent}
+                    className="bg-black/20 hover:bg-black/30 px-4 py-1.5 rounded-lg text-xs transition-all uppercase tracking-widest font-black flex items-center gap-2"
+                >
+                    {resending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                    {sent ? 'Envoyé !' : 'Renvoyer l\'email'}
+                </button>
+                <Link
+                    to="/settings"
+                    className="bg-white/20 hover:bg-white/30 px-4 py-1.5 rounded-lg text-xs transition-all uppercase tracking-widest font-black"
+                >
+                    Vérifier
+                </Link>
+              </div>
            </div>
         )}
         {adminName && (

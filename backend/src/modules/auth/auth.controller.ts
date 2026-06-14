@@ -91,6 +91,7 @@ export const login = async (req: Request, res: Response) => {
     });
 
     const userIp = (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().replace('::ffff:', '');
+    const userAgent = req.headers['user-agent'] || 'Inconnu';
 
     // IP Security Alert Logic - Always notify
     let currentIps = (user.lastIps as string[]) || [];
@@ -106,11 +107,12 @@ export const login = async (req: Request, res: Response) => {
 
     sendEmail({
       to: user.email,
-      subject: 'Nouvelle connexion détectée - Infralyonix',
+      subject: 'Alerte de sécurité : Nouvelle connexion à votre compte Infralyonix',
       templateName: 'NEW_DEVICE_LOGIN',
       context: {
         name: user.name,
         ip: userIp,
+        userAgent,
         date: new Date().toLocaleString('fr-FR')
       }
     });
@@ -205,6 +207,34 @@ export const updateProfile = async (req: any, res: Response) => {
     res.json({ message: 'Profile updated', user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {
     res.status(500).json({ message: 'Update failed', error });
+  }
+};
+
+export const resendVerificationEmail = async (req: any, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.emailVerified) return res.status(400).json({ message: 'Email already verified' });
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerificationToken: verificationToken }
+    });
+
+    sendEmail({
+      to: user.email,
+      subject: 'Vérifiez votre compte Infralyonix',
+      templateName: 'WELCOME_VERIFICATION',
+      context: {
+        name: user.name,
+        verificationUrl: `${req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
+      }
+    });
+
+    res.json({ message: 'Email de vérification envoyé avec succès.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error resending verification', error });
   }
 };
 

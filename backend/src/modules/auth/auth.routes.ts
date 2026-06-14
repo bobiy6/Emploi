@@ -9,6 +9,10 @@ router.post('/login', login);
 router.post('/verify-2fa', verify2FA);
 router.get('/profile', authMiddleware, getProfile);
 router.put('/profile', authMiddleware, updateProfile);
+router.post('/resend-verification', authMiddleware, async (req: any, res: any) => {
+  const { resendVerificationEmail } = await import('./auth.controller.js');
+  return resendVerificationEmail(req, res);
+});
 router.post('/verify-email', verifyEmail);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
