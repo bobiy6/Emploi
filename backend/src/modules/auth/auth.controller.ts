@@ -167,6 +167,75 @@ export const verifyEmail = async (req: Request, res: Response) => {
   }
 };
 
+export const forgotPassword = async (req: Request, res: Response) => {
+  const email = req.body.email?.toLowerCase().trim();
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      // Don't reveal if user exists for security, but we can't send email
+      return res.json({ message: 'Si un compte existe pour cet email, vous recevrez un lien de réinitialisation.' });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires
+      }
+    });
+
+    const resetUrl = `${req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+    sendEmail({
+      to: user.email,
+      subject: 'Réinitialisation de votre mot de passe - Infralyonix',
+      templateName: 'PASSWORD_RESET',
+      context: {
+        name: user.name,
+        resetUrl
+      }
+    });
+
+    res.json({ message: 'Si un compte existe pour cet email, vous recevrez un lien de réinitialisation.' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error sending reset email', error: error.message });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  const { token, password } = req.body;
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        passwordResetToken: token,
+        passwordResetExpires: { gt: new Date() }
+      }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Le jeton est invalide ou a expiré.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null
+      }
+    });
+
+    res.json({ message: 'Mot de passe réinitialisé avec succès.' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Reset failed', error: error.message });
+  }
+};
+
 export const unsubscribe = async (req: Request, res: Response) => {
   const { email } = req.body;
   try {

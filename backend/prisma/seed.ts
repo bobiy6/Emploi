@@ -97,6 +97,12 @@ async function main() {
         subject: 'Confirmation de rechargement - {{amount}}€',
         content: '<h1>Rechargement réussi !</h1><p>Bonjour {{name}},</p><p>Nous vous confirmons que votre compte a été crédité de <strong>{{amount}}€</strong>.</p><p>Votre nouveau solde est de <strong>{{balance}}€</strong>.</p><p>Merci de votre confiance.</p><p style="text-align: center;"><a href="{{dashboardUrl}}" class="button">Voir mon compte</a></p>',
         type: 'TRANSACTIONAL'
+      },
+      {
+        name: 'PASSWORD_RESET',
+        subject: 'Réinitialisation de votre mot de passe',
+        content: '<h1>Réinitialisation de mot de passe</h1><p>Bonjour {{name}},</p><p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte Infralyonix.</p><p>Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :</p><p style="text-align: center;"><a href="{{resetUrl}}" class="button">Réinitialiser mon mot de passe</a></p><p>Si vous n\'êtes pas à l\'origine de cette demande, vous pouvez ignorer cet email.</p>',
+        type: 'TRANSACTIONAL'
       }
     ],
     skipDuplicates: true
