@@ -58,6 +58,26 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
+const parseUA = (ua: string) => {
+    let os = "Inconnu";
+    let browser = "Inconnu";
+
+    if (ua.includes("Windows NT 10.0")) os = "Windows 10/11";
+    else if (ua.includes("Windows NT 6.1")) os = "Windows 7";
+    else if (ua.includes("Macintosh")) os = "macOS";
+    else if (ua.includes("iPhone")) os = "iOS (iPhone)";
+    else if (ua.includes("Android")) os = "Android";
+    else if (ua.includes("Linux")) os = "Linux";
+
+    if (ua.includes("Firefox")) browser = "Firefox";
+    else if (ua.includes("Edg")) browser = "Microsoft Edge";
+    else if (ua.includes("Chrome")) browser = "Google Chrome";
+    else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+    else if (ua.includes("OPR") || ua.includes("Opera")) browser = "Opera";
+
+    return `${browser} sur ${os}`;
+};
+
 export const login = async (req: Request, res: Response) => {
   const email = req.body.email?.toLowerCase().trim();
   const { password } = req.body;
@@ -91,7 +111,8 @@ export const login = async (req: Request, res: Response) => {
     });
 
     const userIp = (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().replace('::ffff:', '');
-    const userAgent = req.headers['user-agent'] || 'Inconnu';
+    const userAgentRaw = req.headers['user-agent'] || 'Inconnu';
+    const userAgent = parseUA(userAgentRaw);
 
     // IP Security Alert Logic - Always notify
     let currentIps = (user.lastIps as string[]) || [];
