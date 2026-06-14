@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Server, CreditCard, LifeBuoy, ShoppingCart, LogOut, Settings, User, LogIn } from 'lucide-react';
+import { LayoutDashboard, Server, CreditCard, LifeBuoy, ShoppingCart, LogOut, Settings, User, LogIn, AlertCircle } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../hooks/useAuth';
 
@@ -101,6 +101,20 @@ const ClientLayout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main Content */}
       <main className="flex-1 ml-64">
+        {!user?.emailVerified && (
+           <div className="bg-amber-500 text-white px-8 py-3 text-sm font-bold flex items-center justify-between shadow-xl sticky top-0 z-40">
+              <div className="flex items-center gap-3">
+                 <AlertCircle className="w-5 h-5" />
+                 <span>Veuillez vérifier votre adresse e-mail pour sécuriser pleinement votre compte.</span>
+              </div>
+              <Link
+                to="/settings"
+                className="bg-white/20 hover:bg-white/30 px-4 py-1.5 rounded-lg text-xs transition-all uppercase tracking-widest font-black"
+              >
+                Vérifier maintenant
+              </Link>
+           </div>
+        )}
         {adminName && (
            <div className="bg-rose-600 text-white px-8 py-2 text-xs font-black flex items-center justify-between shadow-xl sticky top-0 z-50 animate-pulse">
               <div className="flex items-center gap-2 uppercase tracking-widest">

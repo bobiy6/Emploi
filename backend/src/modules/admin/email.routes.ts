@@ -165,7 +165,7 @@ router.post('/templates/sync', authMiddleware, adminMiddleware, async (req, res)
         {
           name: 'NEW_DEVICE_LOGIN',
           subject: 'Nouvelle connexion détectée',
-          content: '<h1>Alerte de sécurité</h1><p>Bonjour {{name}},</p><p>Une nouvelle connexion à votre compte Infralyonix a été détectée depuis une adresse IP inhabituelle.</p><p><strong>Détails de la connexion :</strong></p><ul><li>Date : {{date}}</li><li>Adresse IP : {{ip}}</li></ul><p>S\'il s\'agit de vous, vous pouvez ignorer cet email. Si ce n\'est pas le cas, sécurisez votre compte en changeant votre mot de passe sans tarder.</p>',
+          content: '<h1>Alerte de sécurité</h1><p>Bonjour {{name}},</p><p>Une nouvelle connexion à votre compte Infralyonix a été détectée.</p><p><strong>Détails de la connexion :</strong></p><ul><li>Date : {{date}}</li><li>Adresse IP : {{ip}}</li></ul><p>Si vous n\'êtes pas à l\'origine de cette connexion, nous vous recommandons de changer votre mot de passe immédiatement pour sécuriser votre compte.</p>',
           type: 'TRANSACTIONAL'
         },
         {

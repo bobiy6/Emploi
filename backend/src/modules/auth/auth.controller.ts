@@ -90,33 +90,30 @@ export const login = async (req: Request, res: Response) => {
       userId: user.id
     });
 
-    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+    const userIp = (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().replace('::ffff:', '');
 
-    // IP Security Alert Logic
+    // IP Security Alert Logic - Always notify
     let currentIps = (user.lastIps as string[]) || [];
     if (!currentIps.includes(userIp)) {
       currentIps.push(userIp);
-      if (currentIps.length > 5) currentIps.shift(); // Keep last 5
+      if (currentIps.length > 10) currentIps.shift(); // Keep last 10
 
       await prisma.user.update({
         where: { id: user.id },
         data: { lastIps: currentIps }
       });
-
-      // Notify of login from new IP (Skip first IP ever to avoid spam at registration/first login)
-      if (currentIps.length > 1) {
-        sendEmail({
-          to: user.email,
-          subject: 'Nouvelle connexion détectée - Infralyonix',
-          templateName: 'NEW_DEVICE_LOGIN',
-          context: {
-            name: user.name,
-            ip: userIp,
-            date: new Date().toLocaleString('fr-FR')
-          }
-        });
-      }
     }
+
+    sendEmail({
+      to: user.email,
+      subject: 'Nouvelle connexion détectée - Infralyonix',
+      templateName: 'NEW_DEVICE_LOGIN',
+      context: {
+        name: user.name,
+        ip: userIp,
+        date: new Date().toLocaleString('fr-FR')
+      }
+    });
 
     if (user.twoFactorEnabled) {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -161,6 +158,7 @@ export const getProfile = async (req: any, res: Response) => {
         id: true, email: true, name: true, role: true, balance: true,
         isCompany: true, companyName: true, vatNumber: true, address: true,
         twoFactorEnabled: true,
+        emailVerified: true,
         createdAt: true
       },
     });
@@ -177,7 +175,7 @@ export const updateProfile = async (req: any, res: Response) => {
   const updateData: any = { name, email, isCompany, companyName, vatNumber, address, twoFactorEnabled };
 
   try {
-    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+    const userIp = (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().replace('::ffff:', '');
     let passwordChanged = false;
 
     if (password) {
@@ -311,7 +309,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string;
+    const userIp = (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString().replace('::ffff:', '');
 
     await prisma.user.update({
       where: { id: user.id },
