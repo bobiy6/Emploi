@@ -44,21 +44,23 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
             data: { balance: { increment: credits } }
         });
 
-        // Generate a pseudo-invoice object for the PDF generator
-        let attachments = undefined;
-        try {
-            const pseudoInvoice = {
-                id: `REFILL-${Date.now()}`,
-                createdAt: new Date(),
+        // Create a formal invoice for the refill
+        const invoice = await prisma.invoice.create({
+            data: {
+                userId,
                 amount: credits,
                 status: 'PAID',
-                user: user
-            };
+            },
+            include: { user: true }
+        });
 
+        // Generate PDF Invoice
+        let attachments = undefined;
+        try {
             const { generateInvoicePDF } = await import('./utils/pdfGenerator.js');
-            const pdfBuffer = await generateInvoicePDF(pseudoInvoice);
+            const pdfBuffer = await generateInvoicePDF(invoice);
             attachments = [{
-                filename: `facture-rechargement-${credits}eur.pdf`,
+                filename: `facture-rechargement-${invoice.id}.pdf`,
                 content: pdfBuffer,
                 contentType: 'application/pdf'
             }];
@@ -74,7 +76,7 @@ router.post('/', express.raw({ type: 'application/json' }), async (req: any, res
             context: {
                 name: user.name,
                 amount: credits,
-                balance: user.balance,
+                balance: user.balance, // This is the updated balance
                 dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/billing`
             },
             attachments

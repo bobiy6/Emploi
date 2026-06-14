@@ -53,6 +53,8 @@ model User {
   balance       Float    @default(0.0)
   emailVerified Boolean  @default(false)
   emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
   unsubscribed  Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

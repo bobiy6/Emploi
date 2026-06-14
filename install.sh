@@ -81,10 +81,17 @@ read -p "6. Enable SSL (HTTPS) automatically? (y/n) [y]: " ENABLE_SSL < /dev/tty
 ENABLE_SSL=${ENABLE_SSL:-y}
 
 if [[ $ENABLE_SSL =~ ^[Yy]$ ]]; then
-    read -p "7. Enter your Email for SSL notifications: " SSL_EMAIL < /dev/tty
-    if [ -z "$SSL_EMAIL" ]; then
-        echo -e "${RED}[ERROR] Email is required for SSL registration.${NC}"
-        exit 1
+    # Check if domain is an IP address
+    if [[ $DOMAIN_NAME =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo -e "${YELLOW}[WARNING] SSL cannot be automatically configured for raw IP addresses.${NC}"
+        echo -e "${YELLOW}[WARNING] Disabling automatic SSL configuration.${NC}"
+        ENABLE_SSL="n"
+    else
+        read -p "7. Enter your Email for SSL notifications: " SSL_EMAIL < /dev/tty
+        if [ -z "$SSL_EMAIL" ]; then
+            echo -e "${RED}[ERROR] Email is required for SSL registration.${NC}"
+            exit 1
+        fi
     fi
 fi
 
