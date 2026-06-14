@@ -22,7 +22,8 @@ export const createOrder = async (req: any, res: Response) => {
           total: finalPrice,
           billingCycle: billingCycle || 'monthly',
           status: 'PENDING'
-      }
+      },
+      include: { user: true }
     });
     const invoice = await prisma.invoice.create({
       data: { userId, orderId: order.id, amount: finalPrice, status: 'UNPAID' },
@@ -30,7 +31,7 @@ export const createOrder = async (req: any, res: Response) => {
     });
 
     // Send New Invoice Email
-    if (invoice.user?.email) {
+    if (invoice.user?.email || order.user?.email) {
         let attachments = undefined;
         try {
             const { generateInvoicePDF } = await import('../../utils/pdfGenerator.js');
@@ -45,11 +46,11 @@ export const createOrder = async (req: any, res: Response) => {
         }
 
         sendEmail({
-          to: invoice.user.email,
+          to: invoice.user?.email || order.user?.email,
           subject: `Nouvelle facture #${invoice.id} - Infralyonix`,
           templateName: 'NEW_INVOICE',
           context: {
-            name: invoice.user.name,
+            name: invoice.user?.name || order.user?.name,
             invoiceId: invoice.id,
             amount: invoice.amount,
             dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString(), // 3 days

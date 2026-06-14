@@ -14,11 +14,15 @@ const OrderModal = ({ product, onClose }: any) => {
   const confirmOrder = async () => {
     setLoading(true);
     try {
-      await api.post('/orders', { productId: product.id, billingCycle: selectedCycle });
+      await api.post('/orders', {
+        productId: product.id,
+        billingCycle: selectedCycle
+      });
       alert('Order successful! Go to Billing to pay.');
       onClose();
-    } catch (err) {
-      alert('Order failed');
+    } catch (err: any) {
+      console.error('[ORDER ERROR]:', err.response?.data || err.message);
+      alert(err.response?.data?.message || 'Order failed');
     } finally {
       setLoading(false);
     }
