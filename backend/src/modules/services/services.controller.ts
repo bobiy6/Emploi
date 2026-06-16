@@ -13,6 +13,32 @@ export const getMyServices = async (req: any, res: Response) => {
   }
 };
 
+export const getServiceWebsocket = async (req: any, res: Response) => {
+    const { id } = req.params;
+    try {
+        const service = await prisma.service.findUnique({
+            where: { id: parseInt(id) },
+            include: { product: true }
+        });
+        if (!service || service.userId !== req.userId) return res.status(404).json({ message: 'Service not found' });
+        if (service.module !== 'pterodactyl') return res.status(400).json({ message: 'Only Pterodactyl services support console' });
+
+        const serviceConfig = (service.config as any) || {};
+        const serverId = serviceConfig.serverId;
+        const server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
+
+        if (!server || !service.externalId) throw new Error('Incomplete service or server data');
+
+        const { getAdapter } = await import('../provisioning/provisioning.service.js');
+        const adapter: any = getAdapter('pterodactyl');
+
+        const websocketDetails = await adapter.getWebsocketDetails(service.externalId, server);
+        res.json(websocketDetails);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export const getServiceById = async (req: any, res: Response) => {
   const { id } = req.params;
   try {
