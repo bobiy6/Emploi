@@ -16,6 +16,7 @@ export class PterodactylAdapter implements ProvisioningAdapter {
 
   private async getAuthHeader(server: any, isClientApi: boolean = false) {
     const key = (isClientApi && server.secret) ? server.secret : server.apiKey;
+    console.log(`[DEBUG] Auth Header for ${isClientApi ? 'Client' : 'App'} API. Key starts with: ${key?.substring(0, 8)}`);
     return {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
@@ -119,7 +120,8 @@ export class PterodactylAdapter implements ProvisioningAdapter {
             const allocations = detailRes.data.attributes.relationships?.allocations?.data || [];
             if (allocations.length > 0) {
                 const primary = allocations.find((a: any) => a.attributes.is_default) || allocations[0];
-                connectionInfo = `${primary.attributes.ip}:${primary.attributes.port}`;
+                const ip = primary.attributes.ip_alias || primary.attributes.ip;
+                connectionInfo = `${ip}:${primary.attributes.port}`;
             }
         } catch (err) {
             console.error('Failed to fetch allocation details during creation', err);
@@ -282,7 +284,8 @@ export class PterodactylAdapter implements ProvisioningAdapter {
     let connectionInfo = "Pending allocation...";
     if (Array.isArray(allocations) && allocations.length > 0) {
         const primary = allocations.find((a: any) => a.attributes.is_default) || allocations[0];
-        connectionInfo = `${primary.attributes.ip}:${primary.attributes.port}`;
+        const ip = primary.attributes.ip_alias || primary.attributes.ip;
+        connectionInfo = `${ip}:${primary.attributes.port}`;
     }
 
     // Capture the existing password from externalId if present, to avoid losing it during refresh
@@ -314,8 +317,8 @@ export class PterodactylAdapter implements ProvisioningAdapter {
 
     const headers = await this.getAuthHeader(server, true);
 
-    if (headers.Authorization.startsWith('Bearer ptla_')) {
-        throw new Error('Action client refusée : Clé Application détectée. Configurez une clé Client (ptlc_) dans le champ Secret.');
+    if (!server.secret || !server.secret.startsWith('ptlc_')) {
+        throw new Error('Une clé API de COMPTE (Account API Key) commençant par "ptlc_" est requise dans le champ "Secret" du serveur pour accéder à la console. Vous pouvez la générer dans votre panel Pterodactyl (Mon Compte > API Credentials).');
     }
 
     try {
@@ -326,8 +329,11 @@ export class PterodactylAdapter implements ProvisioningAdapter {
         return res.data.data;
     } catch (err: any) {
         console.error('Pterodactyl Websocket Error:', err.response?.data || err.message);
+        if (err.response?.status === 403) {
+            throw new Error('Accès refusé à la console. Assurez-vous que votre clé API de COMPTE (Secret) est valide et que vous avez accès à ce serveur sur le panel.');
+        }
         const msg = err.response?.data?.errors?.[0]?.detail || err.message;
-        throw new Error(`Failed to fetch console details: ${msg}`);
+        throw new Error(`Erreur console Pterodactyl: ${msg}`);
     }
   }
 }

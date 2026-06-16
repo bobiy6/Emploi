@@ -13,6 +13,43 @@ export const getMyServices = async (req: any, res: Response) => {
   }
 };
 
+const getServerForService = async (service: any) => {
+    const serviceConfig = (service.config as any) || {};
+    let serverId = serviceConfig.serverId;
+
+    // Try to find server by ID from config
+    if (serverId) {
+        const server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
+        if (server) return server;
+    }
+
+    // Fallback: Try to find server by URL if externalId is JSON and has panel_url
+    if (service.externalId && service.externalId.startsWith('{')) {
+        try {
+            const extData = JSON.parse(service.externalId);
+            if (extData.panel_url) {
+                const servers = await prisma.server.findMany({ where: { type: service.module.toUpperCase() } });
+                const matchingServer = servers.find(s => {
+                    const sUrl = s.url.replace(/\/+$/, '');
+                    const pUrl = extData.panel_url.replace(/\/+$/, '');
+                    return sUrl === pUrl || sUrl.includes(pUrl) || pUrl.includes(sUrl);
+                });
+                if (matchingServer) return matchingServer;
+            }
+        } catch (e) {
+            console.error('Fallback server lookup error:', e);
+        }
+    }
+
+    // Last resort: If there is only one server for this module, use it
+    const moduleServers = await prisma.server.findMany({ where: { type: service.module.toUpperCase() } });
+    if (moduleServers.length === 1) {
+        return moduleServers[0];
+    }
+
+    return null;
+};
+
 export const getServiceWebsocket = async (req: any, res: Response) => {
     const { id } = req.params;
     try {
@@ -23,11 +60,15 @@ export const getServiceWebsocket = async (req: any, res: Response) => {
         if (!service || service.userId !== req.userId) return res.status(404).json({ message: 'Service not found' });
         if (service.module !== 'pterodactyl') return res.status(400).json({ message: 'Only Pterodactyl services support console' });
 
-        const serviceConfig = (service.config as any) || {};
-        const serverId = serviceConfig.serverId;
-        const server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
+        const server = await getServerForService(service);
 
-        if (!server || !service.externalId) throw new Error('Incomplete service or server data');
+        if (!server) {
+            return res.status(404).json({ message: 'Serveur infrastructure introuvable ou non configuré pour ce service.' });
+        }
+
+        if (!service.externalId) {
+            return res.status(400).json({ message: 'ID externe Pterodactyl manquant.' });
+        }
 
         const { getAdapter } = await import('../provisioning/provisioning.service.js');
         const adapter: any = getAdapter('pterodactyl');
@@ -35,7 +76,9 @@ export const getServiceWebsocket = async (req: any, res: Response) => {
         const websocketDetails = await adapter.getWebsocketDetails(service.externalId, server);
         res.json(websocketDetails);
     } catch (error: any) {
-        res.status(500).json({ message: error.message });
+        console.error('WEBSOCKET ENDPOINT ERROR:', error.response?.data || error.message);
+        const msg = error.response?.data?.errors?.[0]?.detail || error.message || 'Unknown websocket error';
+        res.status(500).json({ message: msg });
     }
 };
 
@@ -63,19 +106,13 @@ export const powerAction = async (req: any, res: Response) => {
     });
     if (!service || service.userId !== req.userId) return res.status(404).json({ message: 'Service not found' });
 
-    const serviceConfig = (service.config as any) || {};
-    const serverId = serviceConfig.serverId;
-
     const { getAdapter } = await import('../provisioning/provisioning.service.js');
     const adapter = getAdapter(service.module);
 
-    let server = null;
-    if (serverId) {
-        server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
-    }
+    const server = await getServerForService(service);
 
     if (!server) {
-        return res.status(400).json({ message: 'Could not find the original server for this service' });
+        return res.status(400).json({ message: 'Could not find the infrastructure server for this service' });
     }
 
     if (adapter && service.externalId) {
@@ -84,7 +121,7 @@ export const powerAction = async (req: any, res: Response) => {
     res.json({ message: `Service ${action} successful` });
   } catch (error: any) {
     console.error('Power Action Error:', error.response?.data || error.message);
-    const msg = error.message || 'Error performing power action';
+    const msg = error.response?.data?.errors?.[0]?.detail || error.message || 'Error performing power action';
     res.status(500).json({ message: msg });
   }
 };
@@ -99,9 +136,7 @@ export const refreshServiceDetails = async (req: any, res: Response) => {
         if (!service || service.userId !== req.userId) return res.status(404).json({ message: 'Service not found' });
         if (service.module !== 'pterodactyl') return res.status(400).json({ message: 'Only Pterodactyl services can be refreshed' });
 
-        const serviceConfig = (service.config as any) || {};
-        const serverId = serviceConfig.serverId;
-        const server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
+        const server = await getServerForService(service);
 
         if (!server || !service.externalId) throw new Error('Incomplete service or server data');
 
@@ -112,6 +147,7 @@ export const refreshServiceDetails = async (req: any, res: Response) => {
         const details = await adapter.getLatestDetails(service.externalId, server);
 
         // Update service config with new details (IP, etc.)
+        const serviceConfig = (service.config as any) || {};
         const updatedConfig = { ...serviceConfig, ...details };
         const updatedService = await prisma.service.update({
             where: { id: service.id },
@@ -141,9 +177,7 @@ export const adminServiceAction = async (req: any, res: Response) => {
         const { getAdapter } = await import('../provisioning/provisioning.service.js');
         const adapter = getAdapter(service.module);
 
-        const serviceConfig = (service.config as any) || {};
-        const serverId = serviceConfig.serverId;
-        const server = await prisma.server.findUnique({ where: { id: parseInt(serverId) } });
+        const server = await getServerForService(service);
 
         if (adapter && service.externalId && server) {
             if (action === 'suspend') {
