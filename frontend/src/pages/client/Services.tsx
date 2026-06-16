@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Server, Play, Square, RotateCcw, Monitor, Info, Calendar, ShieldAlert, CreditCard } from 'lucide-react';
 import api from '../../api';
+import { Console } from '../../components/Console';
 
 const Services = () => {
   const [services, setServices] = useState<any[]>([]);
@@ -116,14 +117,7 @@ const Services = () => {
                        </div>
                     </div>
 
-                    <div className="bg-black rounded-2xl p-6 h-64 font-mono text-emerald-400 overflow-y-auto text-sm">
-                       <p>[SYSTEM] Booting service {selectedService.externalId}...</p>
-                       <p>[KERNEL] Initializing kernel...</p>
-                       <p>[INIT] Starting network services...</p>
-                       <p>[SSH] Listening on port 22...</p>
-                       <p>[APP] Ready for connection.</p>
-                       <p className="mt-4 animate-pulse">_</p>
-                    </div>
+                    <Console serviceId={selectedService.id} />
                  </Card>
               </div>
 

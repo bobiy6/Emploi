@@ -202,7 +202,6 @@ export const updateProfile = async (req: any, res: Response) => {
     let passwordChanged = false;
 
     if (password) {
-      const bcrypt = (await import('bcryptjs')).default;
       updateData.password = await bcrypt.hash(password, 10);
       passwordChanged = true;
     }

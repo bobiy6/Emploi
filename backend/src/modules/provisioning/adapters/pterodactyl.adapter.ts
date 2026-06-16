@@ -301,4 +301,33 @@ export class PterodactylAdapter implements ProvisioningAdapter {
         ptero_password: existingPassword
     };
   }
+
+  async getWebsocketDetails(externalId: string, server: any): Promise<any> {
+    const baseUrl = this.getNormalizedUrl(server.url);
+    const id = this.getInternalId(externalId);
+
+    let identifier = id;
+    try {
+        const data = JSON.parse(externalId);
+        identifier = data.identifier || id;
+    } catch {}
+
+    const headers = await this.getAuthHeader(server, true);
+
+    if (headers.Authorization.startsWith('Bearer ptla_')) {
+        throw new Error('Action client refusée : Clé Application détectée. Configurez une clé Client (ptlc_) dans le champ Secret.');
+    }
+
+    try {
+        const res = await axios.get(`${baseUrl}/api/client/servers/${identifier}/websocket`, {
+            headers,
+            httpsAgent: this.agent
+        });
+        return res.data.data;
+    } catch (err: any) {
+        console.error('Pterodactyl Websocket Error:', err.response?.data || err.message);
+        const msg = err.response?.data?.errors?.[0]?.detail || err.message;
+        throw new Error(`Failed to fetch console details: ${msg}`);
+    }
+  }
 }
