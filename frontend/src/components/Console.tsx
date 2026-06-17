@@ -29,8 +29,10 @@ export const Console: React.FC<ConsoleProps> = ({ serviceId }) => {
       setError(null);
       const res = await api.get(`/services/${serviceId}/websocket`);
       const { socket, token } = res.data;
+      console.log('[DEBUG] Websocket details received:', { socket, hasToken: !!token });
       connect(socket, token);
     } catch (err: any) {
+      console.error('[DEBUG] Console fetching error:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Failed to connect to console');
     } finally {
       setLoading(false);
@@ -52,7 +54,14 @@ export const Console: React.FC<ConsoleProps> = ({ serviceId }) => {
           setStatus(data.args[0]);
           break;
         case 'console output':
-          setLines(prev => [...prev.slice(-100), data.args[0]]);
+          // Clean ANSI escape codes from output more thoroughly
+          const cleanLine = data.args[0]
+             .replace(/\x1B\[[0-9;]*[mK]/g, '')
+             .replace(/\r/g, '')
+             .trimEnd();
+          if (cleanLine) {
+              setLines(prev => [...prev.slice(-100), cleanLine]);
+          }
           break;
         case 'stats':
           const s = JSON.parse(data.args[0]);
@@ -86,11 +95,29 @@ export const Console: React.FC<ConsoleProps> = ({ serviceId }) => {
     setCommand('');
   };
 
-  if (loading) return <div className="h-64 flex items-center justify-center bg-black rounded-2xl animate-pulse text-gray-500 font-mono">Connecting to console...</div>;
-  if (error) return <div className="h-64 flex flex-col items-center justify-center bg-black rounded-2xl text-rose-500 font-mono p-4 text-center">
-    <p>{error}</p>
-    <button onClick={fetchWebsocket} className="mt-4 text-xs text-blue-500 underline uppercase font-bold">Retry</button>
-  </div>;
+  if (loading) return <div className="h-64 flex items-center justify-center bg-[#0f172a] rounded-2xl animate-pulse text-gray-500 font-mono border border-gray-800 shadow-2xl">Connexion à la console en cours...</div>;
+  if (error) return (
+    <div className="min-h-[300px] flex flex-col items-center justify-center bg-[#0f172a] rounded-2xl text-rose-500 font-mono p-8 text-center border border-rose-900/30 shadow-2xl">
+      <div className="w-12 h-12 bg-rose-500/10 rounded-full flex items-center justify-center mb-4">
+         <Zap className="w-6 h-6 text-rose-500" />
+      </div>
+      <p className="text-sm font-black uppercase tracking-tighter mb-2">Connexion Échouée</p>
+      <p className="text-[11px] text-gray-400 max-w-sm mb-6 leading-relaxed">
+         {error}
+         <br /><br />
+         <span className="text-[10px] italic">Note : Si vous utilisez une connexion HTTPS, assurez-vous que le panel Pterodactyl utilise un certificat SSL valide et que le port 8080 est ouvert.</span>
+      </p>
+      <button
+        onClick={fetchWebsocket}
+        className="px-8 py-3 bg-rose-500 text-white rounded-xl text-[10px] font-black uppercase hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20 active:scale-95"
+      >
+        Tenter une reconnexion
+      </button>
+      <p className="mt-6 text-[8px] text-gray-500 uppercase font-black tracking-widest italic opacity-50">
+         ID Service: #{serviceId} • Infralyonix Infrastructure
+      </p>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
